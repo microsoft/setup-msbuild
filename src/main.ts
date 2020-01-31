@@ -33,7 +33,7 @@ async function run(): Promise<void> {
     let vswhereToolExe = ''
     let cachedToolDirectory = ''
 
-    if (!VSWHERE_PATH) {
+    if (VSWHERE_PATH) {
       // specified a path for vswhere, use it and cache the location
       vswhereToolExe = path.join(VSWHERE_PATH, 'vswhere.exe')
       cachedToolDirectory = await toolCache.cacheDir(

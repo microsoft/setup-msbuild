@@ -19,7 +19,7 @@ jobs:
         vs-version: "[16.4,16.5]"
 
     - name: echo msbuild path
-      run: echo ${{ steps.setup_msbuild.outputs.msbuildPath }}
+      run: echo "${{ steps.setup_msbuild.outputs.msbuildPath }}"
 
     - name: echo vswhere
       run: vswhere.exe

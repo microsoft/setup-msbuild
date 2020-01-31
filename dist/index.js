@@ -1294,7 +1294,7 @@ function run() {
             // check to see if we are using a specific path for vswhere
             let vswhereToolExe = '';
             let cachedToolDirectory = '';
-            if (!VSWHERE_PATH) {
+            if (VSWHERE_PATH) {
                 // specified a path for vswhere, use it and cache the location
                 vswhereToolExe = path.join(VSWHERE_PATH, 'vswhere.exe');
                 cachedToolDirectory = yield toolCache.cacheDir(VSWHERE_PATH, 'vswhere', VSWHERE_VERSION);
