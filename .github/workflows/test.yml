@@ -1,0 +1,28 @@
+name: "build-test-dev"
+on:
+  push:
+    branches:
+      - dev
+    paths-ignore:
+      - '*.md'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup MSBuild
+      id: setup_msbuild
+      uses: ./
+      with:
+        vs-version: "[16.4,16.5]"
+
+    - name: echo msbuild path
+      run: echo ${{ steps.setup_msbuild.outputs.msbuildPath }}
+
+    - name: echo vswhere
+      run: vswhere.exe
+
+    - name: echo MSBuild
+      run: msbuild -version

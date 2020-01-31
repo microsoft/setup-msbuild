@@ -1,0 +1,20 @@
+name: 'setup-msbuild'
+description: 'Helps set up MSBuild into PATH for later usage.'
+author: 'Microsoft'
+branding:
+  color: purple
+  icon: terminal
+inputs:
+  vswhere-path:
+    required: false
+    description: 'Folder location of where vswhere.exe is located if a self-hosted agent'
+  vs-version:
+    description: 'Version of Visual Studio to search; defaults to latest if not specified'
+    required: false
+outputs:
+  msbuildPath:
+    description: 'The resulting location of msbuild for your inputs'
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
