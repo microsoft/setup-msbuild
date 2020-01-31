@@ -14,7 +14,7 @@ jobs:
 
     - name: Setup MSBuild
       id: setup_msbuild
-      uses: ./@dev
+      uses: ./
       with:
         vs-version: "[16.4,16.5]"
 
