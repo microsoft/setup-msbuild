@@ -19,6 +19,8 @@ if (VS_VERSION === 'latest') {
 VSWHERE_EXEC +=
   '-requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\MSBuild.exe'
 
+core.debug(`Execution path: ${VSWHERE_EXEC}`)
+
 async function run(): Promise<void> {
   try {
     // exit if non Windows runner
