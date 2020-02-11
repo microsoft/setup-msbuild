@@ -1,13 +1,14 @@
 import * as core from '@actions/core'
-import * as toolCache from '@actions/tool-cache'
 import * as exec from '@actions/exec'
 import * as path from 'path'
+import * as io from '@actions/io'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
-const VSWHERE_PATH = core.getInput('vswhere-path') || ''
-const VSWHERE_VERSION = '2.8.4'
+const VSWHERE_PATH =
+  core.getInput('vswhere-path') ||
+  'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer'
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = ''
@@ -31,34 +32,25 @@ async function run(): Promise<void> {
 
     // check to see if we are using a specific path for vswhere
     let vswhereToolExe = ''
-    let cachedToolDirectory = ''
 
     if (VSWHERE_PATH) {
-      // specified a path for vswhere, use it and cache the location
+      // specified a path for vswhere, use it
       vswhereToolExe = path.join(VSWHERE_PATH, 'vswhere.exe')
-      cachedToolDirectory = await toolCache.cacheDir(
-        VSWHERE_PATH,
-        'vswhere',
-        VSWHERE_VERSION
-      )
     } else {
-      // using the tool on the runner
-      // check and see if we have a cache for the specified tool version
-      // eslint-disable-next-line @typescript-eslint/await-thenable
-      cachedToolDirectory = await toolCache.find('vswhere', VSWHERE_VERSION)
-
-      // TODO: Remove this when runner has proper tool
-      if (cachedToolDirectory) {
-        core.debug(`Found cached version of vswhere-${VSWHERE_VERSION}`)
-      } else {
-        cachedToolDirectory = await installTool()
+      // check in PATH to see if it is there
+      try {
+        const vsWhereInPath: string = await io.which('vswhere', true)
+        core.debug(`Found tool in PATH: ${vsWhereInPath}`)
+        vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe')
+      } catch {
+        // wasn't found because which threw
+      } finally {
+        core.setFailed(
+          'setup-msbuild requires the path to where vswhere.exe exists'
+        )
       }
     }
 
-    // add cache dir to PATH
-    core.addPath(cachedToolDirectory)
-
-    vswhereToolExe = path.join(cachedToolDirectory, 'vswhere.exe')
     core.debug(`Full cached tool exe: ${vswhereToolExe}`)
 
     let foundToolPath = ''
@@ -81,37 +73,16 @@ async function run(): Promise<void> {
 
     // extract the folder location for the tool
     const toolFolderPath = path.dirname(foundToolPath)
-    core.debug(`Tool Path: ${toolFolderPath}`)
 
     // set the outputs for the action to the folder path of msbuild
     core.setOutput('msbuildPath', toolFolderPath)
 
     // add tool path to PATH
     core.addPath(toolFolderPath)
+    core.debug(`Tool path added to PATH: ${toolFolderPath}`)
   } catch (error) {
     core.setFailed(error.message)
   }
-}
-
-async function installTool(): Promise<string> {
-  // cached tool was not found, retrieve it
-  core.debug(`Downloading vswhere-${VSWHERE_VERSION}`)
-
-  // using choco install we get proper tool and it automatically puts in the PATH
-  await exec.exec(
-    `choco install vswhere -y --no-progress -force -v --version=${VSWHERE_VERSION}`
-  )
-
-  // add the tool to the cache
-  const newCachedToolDirectory = await toolCache.cacheDir(
-    'C:\\ProgramData\\chocolatey\\lib\\vswhere\\tools',
-    'vswhere',
-    VSWHERE_VERSION
-  )
-
-  core.debug(`New cached tool directory=${newCachedToolDirectory}`)
-
-  return newCachedToolDirectory
 }
 
 run()
