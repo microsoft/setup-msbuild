@@ -21,8 +21,5 @@ jobs:
     - name: echo msbuild path
       run: echo "${{ steps.setup_msbuild.outputs.msbuildPath }}"
 
-    - name: echo vswhere
-      run: vswhere.exe
-
     - name: echo MSBuild
       run: msbuild -version
