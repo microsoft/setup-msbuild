@@ -8,7 +8,10 @@ const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
 const VSWHERE_PATH =
   core.getInput('vswhere-path') ||
-  'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer'
+  path.join(
+    process.env['ProgramFiles(x86)'] as string,
+    'Microsoft Visual Studio\\Installer'
+  )
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = ''
@@ -51,7 +54,7 @@ async function run(): Promise<void> {
       }
     }
 
-    core.debug(`Full cached tool exe: ${vswhereToolExe}`)
+    core.debug(`Full tool exe: ${vswhereToolExe}`)
 
     let foundToolPath = ''
     const options: ExecOptions = {}
@@ -64,7 +67,7 @@ async function run(): Promise<void> {
     }
 
     // execute the find putting the result of the command in the options foundToolPath
-    await exec.exec(`${vswhereToolExe} ${VSWHERE_EXEC}`, [], options)
+    await exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options)
 
     if (!foundToolPath) {
       core.setFailed('Unable to find msbuild.')
