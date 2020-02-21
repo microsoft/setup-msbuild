@@ -988,7 +988,7 @@ else {
 }
 VSWHERE_EXEC +=
     '-requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\MSBuild.exe';
-core.debug(`Execution path: ${VSWHERE_EXEC}`);
+core.debug(`Execution arguments: ${VSWHERE_EXEC}`);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
