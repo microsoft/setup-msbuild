@@ -56,30 +56,29 @@ async function run(): Promise<void> {
 
     core.debug(`Full tool exe: ${vswhereToolExe}`)
 
-    let foundToolPath = ''
+    let installationPath = ''
     const options: ExecOptions = {}
     options.listeners = {
       stdout: (data: Buffer) => {
-        const output = data.toString().trim()
-        core.debug(`Found installation path: ${output}`)
-
-        const pattern = `${output}\\\\MSBuild\\**\\Bin\\msbuild.exe`
-
-        /* eslint-disable @typescript-eslint/promise-function-async */
-        glob
-          .create(pattern)
-          .then(globber => globber.glob())
-          .then(files => {
-            if (files?.length > 0) {
-              foundToolPath = files[0]
-            }
-          })
-        /* eslint-enable @typescript-eslint/promise-function-async */
+        installationPath = data.toString().trim()
+        core.debug(`Found installation path: ${installationPath}`)
       }
     }
 
     // execute the find putting the result of the command in the options foundToolPath
     await exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options)
+
+    let foundToolPath = ''
+    if (installationPath) {
+      const pattern = `${installationPath}\\\\MSBuild\\**\\Bin\\msbuild.exe`
+
+      const globber = await glob.create(pattern)
+      const files = await globber.glob()
+
+      if (files?.length > 0) {
+        foundToolPath = files[0]
+      }
+    }
 
     if (!foundToolPath) {
       core.setFailed('Unable to find msbuild.')

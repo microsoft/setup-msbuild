@@ -21,7 +21,7 @@ jobs:
       id: setup_msbuild
       uses: ./
       with:
-        vs-version: "[16.4,16.6]"
+        vs-version: "[16.4,)"
 
     - name: echo msbuild path
       run: echo "${{ steps.setup_msbuild.outputs.msbuildPath }}"

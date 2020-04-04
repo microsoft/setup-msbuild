@@ -1919,6 +1919,7 @@ else {
 }
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`);
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // exit if non Windows runner
@@ -1939,7 +1940,7 @@ function run() {
                     core.debug(`Found tool in PATH: ${vsWhereInPath}`);
                     vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe');
                 }
-                catch (_a) {
+                catch (_b) {
                     // wasn't found because which threw
                 }
                 finally {
@@ -1947,28 +1948,25 @@ function run() {
                 }
             }
             core.debug(`Full tool exe: ${vswhereToolExe}`);
-            let foundToolPath = '';
+            let installationPath = '';
             const options = {};
             options.listeners = {
                 stdout: (data) => {
-                    const output = data.toString().trim();
-                    core.debug(`Found installation path: ${output}`);
-                    const pattern = `${output}\\\\MSBuild\\**\\Bin\\msbuild.exe`;
-                    /* eslint-disable @typescript-eslint/promise-function-async */
-                    glob
-                        .create(pattern)
-                        .then(globber => globber.glob())
-                        .then(files => {
-                        var _a;
-                        if (((_a = files) === null || _a === void 0 ? void 0 : _a.length) > 0) {
-                            foundToolPath = files[0];
-                        }
-                    });
-                    /* eslint-enable @typescript-eslint/promise-function-async */
+                    installationPath = data.toString().trim();
+                    core.debug(`Found installation path: ${installationPath}`);
                 }
             };
             // execute the find putting the result of the command in the options foundToolPath
             yield exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options);
+            let foundToolPath = '';
+            if (installationPath) {
+                const pattern = `${installationPath}\\\\MSBuild\\**\\Bin\\msbuild.exe`;
+                const globber = yield glob.create(pattern);
+                const files = yield globber.glob();
+                if (((_a = files) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                    foundToolPath = files[0];
+                }
+            }
             if (!foundToolPath) {
                 core.setFailed('Unable to find msbuild.');
                 return;
