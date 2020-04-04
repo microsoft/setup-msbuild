@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as glob from '@actions/glob'
 import * as path from 'path'
 import * as io from '@actions/io'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
@@ -14,13 +15,13 @@ const VSWHERE_PATH =
   )
 
 // if a specific version of VS is requested
-let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild '
+let VSWHERE_EXEC =
+  '-products * -requires Microsoft.Component.MSBuild -property installationPath'
 if (VS_VERSION === 'latest') {
   VSWHERE_EXEC += '-latest '
 } else {
   VSWHERE_EXEC += `-version ${VS_VERSION} `
 }
-VSWHERE_EXEC += '-find MSBuild\\**\\Bin\\MSBuild.exe'
 
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`)
 
@@ -58,10 +59,17 @@ async function run(): Promise<void> {
     let foundToolPath = ''
     const options: ExecOptions = {}
     options.listeners = {
-      stdout: (data: Buffer) => {
+      stdout: async (data: Buffer) => {
         // eslint-disable-next-line prefer-const
         let output = data.toString()
-        foundToolPath += output
+
+        const pattern = `${output.trim()}\\\\MSBuild\\**\\Bin\\msbuild.exe`
+        const globber = await glob.create(pattern)
+        const files = await globber.glob()
+
+        if (files?.length > 0) {
+          foundToolPath = files[0]
+        }
       }
     }
 
