@@ -15,11 +15,8 @@ const VSWHERE_PATH =
   )
 
 // if a specific version of VS is requested
-let VSWHERE_EXEC =
-  '-products * -requires Microsoft.Component.MSBuild -property installationPath '
-if (VS_VERSION === 'latest') {
-  VSWHERE_EXEC += '-latest '
-} else {
+let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
+if (VS_VERSION !== 'latest') {
   VSWHERE_EXEC += `-version "${VS_VERSION}" `
 }
 
