@@ -16,11 +16,11 @@ const VSWHERE_PATH =
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC =
-  '-products * -requires Microsoft.Component.MSBuild -property installationPath'
+  '-products * -requires Microsoft.Component.MSBuild -property installationPath '
 if (VS_VERSION === 'latest') {
   VSWHERE_EXEC += '-latest '
 } else {
-  VSWHERE_EXEC += `-version ${VS_VERSION} `
+  VSWHERE_EXEC += `-version "${VS_VERSION}" `
 }
 
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`)
