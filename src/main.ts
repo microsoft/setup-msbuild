@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import * as glob from '@actions/glob'
+import * as fs from 'fs'
 import * as path from 'path'
 import * as io from '@actions/io'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
@@ -56,32 +56,40 @@ async function run(): Promise<void> {
 
     core.debug(`Full tool exe: ${vswhereToolExe}`)
 
-    let installationPath = ''
+    let foundToolPath = ''
     const options: ExecOptions = {}
     options.listeners = {
       stdout: (data: Buffer) => {
-        installationPath = data.toString().trim()
+        const installationPath = data.toString().trim()
         core.debug(`Found installation path: ${installationPath}`)
+
+        let toolPath = path.join(
+          installationPath,
+          'MSBuild\\Current\\Bin\\MSBuild.exe'
+        )
+
+        core.debug(`Checking for path: ${toolPath}`)
+        if (!fs.existsSync(toolPath)) {
+          toolPath = path.join(
+            installationPath,
+            'MSBuild\\15.0\\Bin\\MSBuild.exe'
+          )
+
+          core.debug(`Checking for path: ${toolPath}`)
+          if (!fs.existsSync(toolPath)) {
+            return
+          }
+        }
+
+        foundToolPath = toolPath
       }
     }
 
     // execute the find putting the result of the command in the options foundToolPath
     await exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options)
 
-    let foundToolPath = ''
-    if (installationPath) {
-      const pattern = `${installationPath}\\\\MSBuild\\**\\Bin\\msbuild.exe`
-
-      const globber = await glob.create(pattern)
-      const files = await globber.glob()
-
-      if (files?.length > 0) {
-        foundToolPath = files[0]
-      }
-    }
-
     if (!foundToolPath) {
-      core.setFailed('Unable to find msbuild.')
+      core.setFailed('Unable to find MSBuild.')
       return
     }
 
