@@ -59,17 +59,22 @@ async function run(): Promise<void> {
     let foundToolPath = ''
     const options: ExecOptions = {}
     options.listeners = {
-      stdout: async (data: Buffer) => {
-        // eslint-disable-next-line prefer-const
-        let output = data.toString()
+      stdout: (data: Buffer) => {
+        const output = data.toString().trim()
+        core.debug(`Found installation path: ${output}`)
 
-        const pattern = `${output.trim()}\\\\MSBuild\\**\\Bin\\msbuild.exe`
-        const globber = await glob.create(pattern)
-        const files = await globber.glob()
+        const pattern = `${output}\\\\MSBuild\\**\\Bin\\msbuild.exe`
 
-        if (files?.length > 0) {
-          foundToolPath = files[0]
-        }
+        /* eslint-disable @typescript-eslint/promise-function-async */
+        glob
+          .create(pattern)
+          .then(globber => globber.glob())
+          .then(files => {
+            if (files?.length > 0) {
+              foundToolPath = files[0]
+            }
+          })
+        /* eslint-enable @typescript-eslint/promise-function-async */
       }
     }
 

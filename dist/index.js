@@ -1950,17 +1950,22 @@ function run() {
             let foundToolPath = '';
             const options = {};
             options.listeners = {
-                stdout: (data) => __awaiter(this, void 0, void 0, function* () {
-                    var _b;
-                    // eslint-disable-next-line prefer-const
-                    let output = data.toString();
-                    const pattern = `${output.trim()}\\\\MSBuild\\**\\Bin\\msbuild.exe`;
-                    const globber = yield glob.create(pattern);
-                    const files = yield globber.glob();
-                    if (((_b = files) === null || _b === void 0 ? void 0 : _b.length) > 0) {
-                        foundToolPath = files[0];
-                    }
-                })
+                stdout: (data) => {
+                    const output = data.toString().trim();
+                    core.debug(`Found installation path: ${output}`);
+                    const pattern = `${output}\\\\MSBuild\\**\\Bin\\msbuild.exe`;
+                    /* eslint-disable @typescript-eslint/promise-function-async */
+                    glob
+                        .create(pattern)
+                        .then(globber => globber.glob())
+                        .then(files => {
+                        var _a;
+                        if (((_a = files) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                            foundToolPath = files[0];
+                        }
+                    });
+                    /* eslint-enable @typescript-eslint/promise-function-async */
+                }
             };
             // execute the find putting the result of the command in the options foundToolPath
             yield exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options);
