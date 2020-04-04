@@ -979,7 +979,7 @@ const VS_VERSION = core.getInput('vs-version') || 'latest';
 const VSWHERE_PATH = core.getInput('vswhere-path') ||
     path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer');
 // if a specific version of VS is requested
-let VSWHERE_EXEC = '';
+let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild ';
 if (VS_VERSION === 'latest') {
     VSWHERE_EXEC += '-latest ';
 }
@@ -987,7 +987,7 @@ else {
     VSWHERE_EXEC += `-version ${VS_VERSION} `;
 }
 VSWHERE_EXEC +=
-    '-requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\MSBuild.exe';
+    '-find MSBuild\\**\\Bin\\MSBuild.exe';
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
