@@ -15,7 +15,7 @@ You may have a situation where your Actions runner has multiple versions of Visu
 - name: Add msbuild to PATH
   uses: microsoft/setup-msbuild@v1.0.0
     with:
-      vs-version: [16.4,16.5]
+      vs-version: "[16.4,16.5]"
 ```
 
 ## How does this work?
