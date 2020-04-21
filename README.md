@@ -3,7 +3,7 @@ You know how handy that 'Visual Studio Developer Command Prompt' is on your loca
 
 ## Usage
 
-```
+```yml
 - name: Add msbuild to PATH
   uses: microsoft/setup-msbuild@v1.0.1
 ```
@@ -11,11 +11,11 @@ You know how handy that 'Visual Studio Developer Command Prompt' is on your loca
 ## Specifying specific versions of Visual Studio
 You may have a situation where your Actions runner has multiple versions of Visual Studio and you need to find a specific version of the tool.  Simply add the `vs-version` input to specify the range of versions to find.  If looking for a specific version, specify the minimum and maximum versions as shown in the example below, which will look for just 16.4.
 
-```
+```yml
 - name: Add msbuild to PATH
   uses: microsoft/setup-msbuild@v1.0.1
     with:
-      vs-version: [16.4,16.5)
+      vs-version: '[16.4,16.5)'
 ```
 
 The syntax is the same used for Visual Studio extensions, where square brackets like "[" mean inclusive, and parenthesis like "(" mean exclusive. A comma is always required, but eliding the minimum version looks for all older versions and eliding the maximum version looks for all newer versions. See the [vswhere wiki](https://github.com/microsoft/vswhere/wiki) for more details.
@@ -23,7 +23,7 @@ The syntax is the same used for Visual Studio extensions, where square brackets 
 ## How does this work?
 This makes use of the vswhere tool which is a tool is delivered by Microsoft to help in identifying Visual Studio installs and various components.  This tool is installed on the hosted Windows runners for GitHub Actions.  If you are using a self-hosted runner, you either need to make sure vswhere.exe is in your agent's PATH or specify a full path to the location using:
 
-```
+```yml
 - name: Add msbuild to PATH
   uses: microsoft/setup-msbuild@v1.0.1
     with:
@@ -36,7 +36,7 @@ While the Action enables you to specify a `vswhere` path as well as a `vs-versio
 ## Building this repo
 As with most GitHub Actions, this requires NodeJS development tools.  After installing NodeJS, you can build this by executing:
 
-```
+```bash
 npm install
 npm run build
 npm run pack
