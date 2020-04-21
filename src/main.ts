@@ -7,12 +7,7 @@ import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
-const VSWHERE_PATH =
-  core.getInput('vswhere-path') ||
-  path.join(
-    process.env['ProgramFiles(x86)'] as string,
-    'Microsoft Visual Studio\\Installer'
-  )
+const VSWHERE_PATH = core.getInput('vswhere-path')
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
@@ -43,12 +38,24 @@ async function run(): Promise<void> {
         core.debug(`Found tool in PATH: ${vsWhereInPath}`)
         vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe')
       } catch {
-        // wasn't found because which threw
-      } finally {
-        core.setFailed(
-          'setup-msbuild requires the path to where vswhere.exe exists'
+        // check for VS-installed path
+        const vsWhereInInstallerPath = path.join(
+          process.env['ProgramFiles(x86)'] as string,
+          'Microsoft Visual Studio\\Installer\\vswhere.exe'
         )
+
+        if (fs.existsSync(vsWhereInInstallerPath)) {
+          vswhereToolExe = vsWhereInInstallerPath
+        }
       }
+    }
+
+    if (!fs.existsSync(vswhereToolExe)) {
+      core.setFailed(
+        'setup-msbuild requires the path to where vswhere.exe exists'
+      )
+
+      return
     }
 
     core.debug(`Full tool exe: ${vswhereToolExe}`)

@@ -977,8 +977,7 @@ const path = __importStar(__webpack_require__(622));
 const io = __importStar(__webpack_require__(1));
 const IS_WINDOWS = process.platform === 'win32';
 const VS_VERSION = core.getInput('vs-version') || 'latest';
-const VSWHERE_PATH = core.getInput('vswhere-path') ||
-    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer');
+const VSWHERE_PATH = core.getInput('vswhere-path');
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest ';
 if (VS_VERSION !== 'latest') {
@@ -1007,11 +1006,16 @@ function run() {
                     vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe');
                 }
                 catch (_a) {
-                    // wasn't found because which threw
+                    // check for VS-installed path
+                    const vsWhereInInstallerPath = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer\\vswhere.exe');
+                    if (fs.existsSync(vsWhereInInstallerPath)) {
+                        vswhereToolExe = vsWhereInInstallerPath;
+                    }
                 }
-                finally {
-                    core.setFailed('setup-msbuild requires the path to where vswhere.exe exists');
-                }
+            }
+            if (!fs.existsSync(vswhereToolExe)) {
+                core.setFailed('setup-msbuild requires the path to where vswhere.exe exists');
+                return;
             }
             core.debug(`Full tool exe: ${vswhereToolExe}`);
             let foundToolPath = '';
