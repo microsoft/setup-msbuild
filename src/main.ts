@@ -30,21 +30,21 @@ async function run(): Promise<void> {
 
     if (VSWHERE_PATH) {
       // specified a path for vswhere, use it
-      core.info(`Using given vswhere-path: ${VSWHERE_PATH}`)
+      core.debug(`Using given vswhere-path: ${VSWHERE_PATH}`)
       vswhereToolExe = path.join(VSWHERE_PATH, 'vswhere.exe')
     } else {
       // check in PATH to see if it is there
       try {
         const vsWhereInPath: string = await io.which('vswhere', true)
-        core.info(`Found tool in PATH: ${vsWhereInPath}`)
-        vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe')
+        core.debug(`Found tool in PATH: ${vsWhereInPath}`)
+        vswhereToolExe = vsWhereInPath
       } catch {
         // fall back to VS-installed path
         vswhereToolExe = path.join(
           process.env['ProgramFiles(x86)'] as string,
           'Microsoft Visual Studio\\Installer\\vswhere.exe'
         )
-        core.info(`Trying Visual Studio-installed path: ${vswhereToolExe}`)
+        core.debug(`Trying Visual Studio-installed path: ${vswhereToolExe}`)
       }
     }
 
@@ -63,7 +63,7 @@ async function run(): Promise<void> {
     options.listeners = {
       stdout: (data: Buffer) => {
         const installationPath = data.toString().trim()
-        core.info(`Found installation path: ${installationPath}`)
+        core.debug(`Found installation path: ${installationPath}`)
 
         let toolPath = path.join(
           installationPath,
@@ -103,7 +103,7 @@ async function run(): Promise<void> {
 
     // add tool path to PATH
     core.addPath(toolFolderPath)
-    core.info(`Tool path added to PATH: ${toolFolderPath}`)
+    core.debug(`Tool path added to PATH: ${toolFolderPath}`)
   } catch (error) {
     core.setFailed(error.message)
   }
