@@ -996,21 +996,20 @@ function run() {
             let vswhereToolExe = '';
             if (VSWHERE_PATH) {
                 // specified a path for vswhere, use it
+                core.info(`Using given vswhere-path: ${VSWHERE_PATH}`);
                 vswhereToolExe = path.join(VSWHERE_PATH, 'vswhere.exe');
             }
             else {
                 // check in PATH to see if it is there
                 try {
                     const vsWhereInPath = yield io.which('vswhere', true);
-                    core.debug(`Found tool in PATH: ${vsWhereInPath}`);
+                    core.info(`Found tool in PATH: ${vsWhereInPath}`);
                     vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe');
                 }
                 catch (_a) {
-                    // check for VS-installed path
-                    const vsWhereInInstallerPath = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer\\vswhere.exe');
-                    if (fs.existsSync(vsWhereInInstallerPath)) {
-                        vswhereToolExe = vsWhereInInstallerPath;
-                    }
+                    // fall back to VS-installed path
+                    vswhereToolExe = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer\\vswhere.exe');
+                    core.info(`Trying Visual Studio-installed path: ${vswhereToolExe}`);
                 }
             }
             if (!fs.existsSync(vswhereToolExe)) {
@@ -1023,7 +1022,7 @@ function run() {
             options.listeners = {
                 stdout: (data) => {
                     const installationPath = data.toString().trim();
-                    core.debug(`Found installation path: ${installationPath}`);
+                    core.info(`Found installation path: ${installationPath}`);
                     let toolPath = path.join(installationPath, 'MSBuild\\Current\\Bin\\MSBuild.exe');
                     core.debug(`Checking for path: ${toolPath}`);
                     if (!fs.existsSync(toolPath)) {
@@ -1048,7 +1047,7 @@ function run() {
             core.setOutput('msbuildPath', toolFolderPath);
             // add tool path to PATH
             core.addPath(toolFolderPath);
-            core.debug(`Tool path added to PATH: ${toolFolderPath}`);
+            core.info(`Tool path added to PATH: ${toolFolderPath}`);
         }
         catch (error) {
             core.setFailed(error.message);
