@@ -28,6 +28,9 @@ This makes use of the vswhere tool which is a tool is delivered by Microsoft to 
       vswhere-path: 'C:\path\to\your\tools\'
 ```
 
+## Notes on arguments
+While the Action enables you to specify a `vswhere` path as well as a `vs-version`, these are more advanced options and when using GitHub-hosted runners you should not need these and is recommended you don't specify them.  Using these require you to fully understand the runner environment, updates to the tools on the runner, and can cause failures if you are out of sync.  For GitHub-hosted runners, omitting these arguments is the preferred usage.
+
 ## Building this repo
 As with most GitHub Actions, this requires NodeJS development tools.  After installing NodeJS, you can build this by executing:
 
