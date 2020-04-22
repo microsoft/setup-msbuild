@@ -17,14 +17,27 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Setup MSBuild
-      id: setup_msbuild
+    - name: Setup MSBuild (vswhere-path)
+      id: setup_msbuild_explicit
       uses: ./
       with:
-        vs-version: "[16.4,)"
+        vswhere-path: C:\ProgramData\chocolatey\bin
+
+    - name: Setup MSBuild (PATH)
+      id: setup_msbuild_path
+      uses: ./
+
+    - name: Setup MSBuild (fallback)
+      id: setup_msbuild_fallback
+      uses: ./
+      env:
+        PATH: ''
 
     - name: echo msbuild path
-      run: echo "${{ steps.setup_msbuild.outputs.msbuildPath }}"
+      run: |
+        echo "vswhere-path: ${{ steps.setup_msbuild_explicit.outputs.msbuildPath }}"
+        echo "PATH: ${{ steps.setup_msbuild_path.outputs.msbuildPath }}"
+        echo "Fallback: ${{ steps.setup_msbuild_fallback.outputs.msbuildPath }}"
 
     - name: echo MSBuild
       run: msbuild -version
