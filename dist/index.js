@@ -972,22 +972,17 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const exec = __importStar(__webpack_require__(986));
+const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const io = __importStar(__webpack_require__(1));
 const IS_WINDOWS = process.platform === 'win32';
 const VS_VERSION = core.getInput('vs-version') || 'latest';
-const VSWHERE_PATH = core.getInput('vswhere-path') ||
-    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer');
+const VSWHERE_PATH = core.getInput('vswhere-path');
 // if a specific version of VS is requested
-let VSWHERE_EXEC = '';
-if (VS_VERSION === 'latest') {
-    VSWHERE_EXEC += '-latest ';
+let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest ';
+if (VS_VERSION !== 'latest') {
+    VSWHERE_EXEC += `-version "${VS_VERSION}" `;
 }
-else {
-    VSWHERE_EXEC += `-version ${VS_VERSION} `;
-}
-VSWHERE_EXEC +=
-    '-requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\MSBuild.exe';
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -1001,6 +996,7 @@ function run() {
             let vswhereToolExe = '';
             if (VSWHERE_PATH) {
                 // specified a path for vswhere, use it
+                core.debug(`Using given vswhere-path: ${VSWHERE_PATH}`);
                 vswhereToolExe = path.join(VSWHERE_PATH, 'vswhere.exe');
             }
             else {
@@ -1008,29 +1004,41 @@ function run() {
                 try {
                     const vsWhereInPath = yield io.which('vswhere', true);
                     core.debug(`Found tool in PATH: ${vsWhereInPath}`);
-                    vswhereToolExe = path.join(vsWhereInPath, 'vswhere.exe');
+                    vswhereToolExe = vsWhereInPath;
                 }
                 catch (_a) {
-                    // wasn't found because which threw
+                    // fall back to VS-installed path
+                    vswhereToolExe = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio\\Installer\\vswhere.exe');
+                    core.debug(`Trying Visual Studio-installed path: ${vswhereToolExe}`);
                 }
-                finally {
-                    core.setFailed('setup-msbuild requires the path to where vswhere.exe exists');
-                }
+            }
+            if (!fs.existsSync(vswhereToolExe)) {
+                core.setFailed('setup-msbuild requires the path to where vswhere.exe exists');
+                return;
             }
             core.debug(`Full tool exe: ${vswhereToolExe}`);
             let foundToolPath = '';
             const options = {};
             options.listeners = {
                 stdout: (data) => {
-                    // eslint-disable-next-line prefer-const
-                    let output = data.toString();
-                    foundToolPath += output;
+                    const installationPath = data.toString().trim();
+                    core.debug(`Found installation path: ${installationPath}`);
+                    let toolPath = path.join(installationPath, 'MSBuild\\Current\\Bin\\MSBuild.exe');
+                    core.debug(`Checking for path: ${toolPath}`);
+                    if (!fs.existsSync(toolPath)) {
+                        toolPath = path.join(installationPath, 'MSBuild\\15.0\\Bin\\MSBuild.exe');
+                        core.debug(`Checking for path: ${toolPath}`);
+                        if (!fs.existsSync(toolPath)) {
+                            return;
+                        }
+                    }
+                    foundToolPath = toolPath;
                 }
             };
             // execute the find putting the result of the command in the options foundToolPath
             yield exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options);
             if (!foundToolPath) {
-                core.setFailed('Unable to find msbuild.');
+                core.setFailed('Unable to find MSBuild.');
                 return;
             }
             // extract the folder location for the tool
