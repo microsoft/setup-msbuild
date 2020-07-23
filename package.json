@@ -1,6 +1,6 @@
 {
   "name": "setup-msbuild",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Helps set up specific MSBuild tool into PATH for later usage.",
   "main": "lib/main.js",
@@ -11,7 +11,7 @@
     "lint": "eslint src/**/*.ts",
     "pack": "ncc build",
     "test": "jest",
-    "all": "npm run build && npm run format && npm run lint && npm run pack && npm test"
+    "all": "npm run build && npm run format && npm run lint && npm run pack"
   },
   "repository": {
     "type": "git",
