@@ -21,7 +21,7 @@ You may have a situation where your Actions runner has multiple versions of Visu
 The syntax is the same used for Visual Studio extensions, where square brackets like "[" mean inclusive, and parenthesis like "(" mean exclusive. A comma is always required, but eliding the minimum version looks for all older versions and eliding the maximum version looks for all newer versions. See the [vswhere wiki](https://github.com/microsoft/vswhere/wiki) for more details.
 
 ## How does this work?
-This makes use of the vswhere tool which is a tool is delivered by Microsoft to help in identifying Visual Studio installs and various components.  This tool is installed on the hosted Windows runners for GitHub Actions.  If you are using a self-hosted runner, you either need to make sure vswhere.exe is in your agent's PATH or specify a full path to the location using:
+This makes use of the vswhere tool which is a tool delivered by Microsoft to help in identifying Visual Studio installs and various components.  This tool is installed on the hosted Windows runners for GitHub Actions.  If you are using a self-hosted runner, you either need to make sure vswhere.exe is in your agent's PATH or specify a full path to the location using:
 
 ```yml
 - name: Add msbuild to PATH
