@@ -5,7 +5,7 @@ You know how handy that 'Visual Studio Developer Command Prompt' is on your loca
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.0.1
+  uses: microsoft/setup-msbuild@v1.0.2
 ```
 
 ## Specifying specific versions of Visual Studio
@@ -13,7 +13,7 @@ You may have a situation where your Actions runner has multiple versions of Visu
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.0.1
+  uses: microsoft/setup-msbuild@v1.0.2
   with:
     vs-version: '[16.4,16.5)'
 ```
@@ -25,7 +25,7 @@ This makes use of the vswhere tool which is a tool delivered by Microsoft to hel
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.0.1
+  uses: microsoft/setup-msbuild@v1.0.2
   with:
     vswhere-path: 'C:\path\to\your\tools\'
 ```
