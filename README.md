@@ -15,7 +15,7 @@ You may have a situation where your Actions runner has multiple versions of Visu
 - name: Add msbuild to PATH
   uses: microsoft/setup-msbuild@v1.0.2
   with:
-    vs-version: '[16.4,16.5)'
+    vs-version: '[16.4,16.5]'
 ```
 
 The syntax is the same used for Visual Studio extensions, where square brackets like "[" mean inclusive, and parenthesis like "(" mean exclusive. A comma is always required, but eliding the minimum version looks for all older versions and eliding the maximum version looks for all newer versions. See the [vswhere wiki](https://github.com/microsoft/vswhere/wiki) for more details.
