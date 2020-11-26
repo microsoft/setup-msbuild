@@ -3,7 +3,7 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as io from '@actions/io'
-import {ExecOptions} from '@actions/exec/lib/interfaces'
+import { ExecOptions } from '@actions/exec/lib/interfaces'
 
 const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
@@ -101,9 +101,7 @@ async function run(): Promise<void> {
     // set the outputs for the action to the folder path of msbuild
     core.setOutput('msbuildPath', toolFolderPath)
 
-    // add tool path to PATH
-    core.addPath(toolFolderPath)
-    core.debug(`Tool path added to PATH: ${toolFolderPath}`)
+    core.debug(`Tool path: ${toolFolderPath}`)
   } catch (error) {
     core.setFailed(error.message)
   }
