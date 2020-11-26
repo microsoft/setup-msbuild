@@ -101,7 +101,7 @@ async function run(): Promise<void> {
     // set the outputs for the action to the folder path of msbuild
     core.setOutput('msbuildPath', toolFolderPath)
 
-    core.debug(`Tool path: ${toolFolderPath}`)
+    core.debug(`Visual Studio bin path: ${toolFolderPath}`)
   } catch (error) {
     core.setFailed(error.message)
   }
