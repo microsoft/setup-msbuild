@@ -38,11 +38,14 @@ jobs:
         echo "vswhere-path: ${{ steps.setup_msbuild_explicit.outputs.msbuildPath }}"
         echo "PATH: ${{ steps.setup_msbuild_path.outputs.msbuildPath }}"
         echo "Fallback: ${{ steps.setup_msbuild_fallback.outputs.msbuildPath }}"
+
+    - name: echo MSBuild
+      run: msbuild -version
+
     - name: echo vstest path
       run: | 
         echo "PATH: ${{ steps.setup_msbuild_path.outputs.vstestPath }}" 
+        
     - name: echo VSTest
       run: | 
         vstest.console --help
-    - name: echo MSBuild
-      run: msbuild -version
