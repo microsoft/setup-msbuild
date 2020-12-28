@@ -59,6 +59,7 @@ async function run(): Promise<void> {
     core.debug(`Full tool exe: ${vswhereToolExe}`)
 
     let foundToolPath = ''
+    let foundTestToolPath = ''
     const options: ExecOptions = {}
     options.listeners = {
       stdout: (data: Buffer) => {
@@ -68,7 +69,7 @@ async function run(): Promise<void> {
         let toolPath = path.join(
           installationPath,
           'MSBuild\\Current\\Bin\\MSBuild.exe'
-        )
+        )       
 
         core.debug(`Checking for path: ${toolPath}`)
         if (!fs.existsSync(toolPath)) {
@@ -83,6 +84,11 @@ async function run(): Promise<void> {
           }
         }
 
+        foundTestToolPath = path.join(
+          installationPath,
+          'Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe'
+        )
+
         foundToolPath = toolPath
       }
     }
@@ -95,14 +101,21 @@ async function run(): Promise<void> {
       return
     }
 
+    if(!foundTestToolPath){
+      core.warning('Unable to find VSTest.console')
+    }
+
     // extract the folder location for the tool
     const toolFolderPath = path.dirname(foundToolPath)
+    const testToolFolderPath = path.dirname(foundTestToolPath)
 
     // set the outputs for the action to the folder path of msbuild
     core.setOutput('msbuildPath', toolFolderPath)
+    core.setOutput('vstestPath', testToolFolderPath)
 
     // add tool path to PATH
     core.addPath(toolFolderPath)
+    core.addPath(testToolFolderPath)
     core.debug(`Tool path added to PATH: ${toolFolderPath}`)
   } catch (error) {
     core.setFailed(error.message)
