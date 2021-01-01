@@ -59,11 +59,13 @@ async function run(): Promise<void> {
     core.debug(`Full tool exe: ${vswhereToolExe}`)
 
     let foundToolPath = ''
+    let vsIntegrationToolsPath = ''
     const options: ExecOptions = {}
     options.listeners = {
       stdout: (data: Buffer) => {
         const installationPath = data.toString().trim()
         core.debug(`Found installation path: ${installationPath}`)
+        vsIntegrationToolsPath = path.join(installationPath, 'VSSDK\\VisualStudioIntegration\\Tools\\Bin\\')
 
         let toolPath = path.join(
           installationPath,
@@ -104,6 +106,10 @@ async function run(): Promise<void> {
     // add tool path to PATH
     core.addPath(toolFolderPath)
     core.debug(`Tool path added to PATH: ${toolFolderPath}`)
+
+    core.addPath(vsIntegrationToolsPath)
+    core.debug(`Visual Studio Integration Tools path added to PATH: ${vsIntegrationToolsPath}`)
+
   } catch (error) {
     core.setFailed(error.message)
   }
