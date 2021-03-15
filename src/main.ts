@@ -100,6 +100,9 @@ async function run(): Promise<void> {
 
     // set the outputs for the action to the folder path of msbuild
     core.setOutput('msbuildPath', toolFolderPath)
+    
+    // also set MSBUILD environment variable in case a tool needs that variable
+    core.exportVariable('MSBUILD', toolFolderPath);
 
     // add tool path to PATH
     core.addPath(toolFolderPath)
