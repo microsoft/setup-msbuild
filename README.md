@@ -1,5 +1,7 @@
 # microsoft/setup-msbuild
-You know how handy that 'Visual Studio Developer Command Prompt' is on your local machine?  And how it adds several things to `PATH` to allow you to just issue commands like `msbuild` or otherwise?  Use this action to setup similar flexibility in your Windows-based GitHub Actions runners.  This will let you discover where those tool paths are and automatically add them to the `PATH` environment variables for you so future steps in your Actions workflow can just initiate commands without knowing the full path.
+You know how handy that 'Visual Studio Developer Command Prompt' is on your local machine?  And how it adds several things to `PATH` to allow you to just issue commands like `msbuild` or otherwise?  Use this action to setup similar flexibility in your Windows-based GitHub Actions runners.  This will let you discover where the `MSBuild` tool is and automatically add it to the `PATH` environment variables for you so future steps in your Actions workflow can just initiate `msbuild` commands without knowing the full path.
+
+> Please note this tools is not to replicate the full 'Developer Command Prompt' but only discover and assist with MSBuild and not other tools like cl.exe
 
 ## Usage
 
