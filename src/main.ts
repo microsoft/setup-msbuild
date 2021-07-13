@@ -8,12 +8,16 @@ import {ExecOptions} from '@actions/exec/lib/interfaces'
 const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
 const VSWHERE_PATH = core.getInput('vswhere-path')
+const ALLOW_PRERELEASE = core.getInput('allow-prerelease') || 'false'
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
 if (VS_VERSION !== 'latest') {
   VSWHERE_EXEC += `-version "${VS_VERSION}" `
 }
+ if (ALLOW_PRERELEASE === 'true') {
+    VSWHERE_EXEC += ' --prerelease '
+ }
 
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`)
 
