@@ -11,14 +11,10 @@ const VSWHERE_PATH = core.getInput('vswhere-path')
 const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
 
 // if a specific version of VS is requested
-let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath '
+let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
 if (ALLOW_PRERELEASE === 'true') {
     VSWHERE_EXEC += ' -prerelease '
  }
-else
-{
-    VSWHERE_EXEC += ' -latest '  
-}
 
 if (VS_VERSION !== 'latest') {
   VSWHERE_EXEC += `-version "${VS_VERSION}" `
