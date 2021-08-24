@@ -11,6 +11,9 @@ inputs:
   vs-version:
     description: 'Version of Visual Studio to search; defaults to latest if not specified'
     required: false
+  vs-prerelease:
+    description: 'Enable searching for pre-release versions of Visual Studio/MSBuild'
+    required: false
 outputs:
   msbuildPath:
     description: 'The resulting location of msbuild for your inputs'
