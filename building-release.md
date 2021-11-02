@@ -7,7 +7,7 @@ This is a quick document to walk through the process of building and releasing.
 - Build the branch/package
     - `npm install`
     - `npm run build`
-    - `npm run package`
+    - `npm run pack`
 - Prune the dependencies to only production
     - `npm prune --production`
 - Uncomment `node_modules` in `.gitignore` **for this branch only**
