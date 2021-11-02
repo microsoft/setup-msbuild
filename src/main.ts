@@ -71,38 +71,39 @@ async function run(): Promise<void> {
         const installationPath = data.toString().trim()
         core.debug(`Found installation path: ${installationPath}`)
 
-        // x64 only exists in one possible location, so no fallback probing
-        if (MSBUILD_ARCH === "x64") {
-          let toolPath = path.join(
+        const binSubdirectory = MSBUILD_ARCH === "x64" ?
+          "Bin/amd64" : "Bin"
+
+        let toolPath = path.join(
+          installationPath,
+          'MSBuild\\Current',
+          binSubdirectory,
+          'MSBuild.exe'
+        )
+
+        core.debug(`Checking for path: ${toolPath}`)
+        if (!fs.existsSync(toolPath)) {
+          // If the located Visual Studio instance is older than 2019,
+          // MSBuild's toolset directory was in a versioned subdirectory
+          // instead of 'Current'.
+          //
+          // VSWhere applies only to VS 2017+, so we only have to check
+          // for '15.0'.
+
+          toolPath = path.join(
             installationPath,
-            'MSBuild\\Current\\Bin\\amd64\\MSBuild.exe'
-          );
+            'MSBuild\\15.0',
+            binSubdirectory,
+            'MSBuild.exe'
+            )
+
           core.debug(`Checking for path: ${toolPath}`)
           if (!fs.existsSync(toolPath)) {
             return
           }
-          foundToolPath = toolPath
-        } else {
-          let toolPath = path.join(
-            installationPath,
-            'MSBuild\\Current\\Bin\\MSBuild.exe'
-          )
-
-          core.debug(`Checking for path: ${toolPath}`)
-          if (!fs.existsSync(toolPath)) {
-            toolPath = path.join(
-              installationPath,
-              'MSBuild\\15.0\\Bin\\MSBuild.exe'
-            )
-
-            core.debug(`Checking for path: ${toolPath}`)
-            if (!fs.existsSync(toolPath)) {
-              return
-            }
-          }
-
-          foundToolPath = toolPath
         }
+
+        foundToolPath = toolPath
       }
     }
 
