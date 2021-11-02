@@ -72,7 +72,7 @@ async function run(): Promise<void> {
         core.debug(`Found installation path: ${installationPath}`)
 
         // x64 only exists in one possible location, so no fallback probing
-        if(MSBUILD_ARCH === "x64") {
+        if (MSBUILD_ARCH === "x64") {
           let toolPath = path.join(
             installationPath,
             'MSBuild\\Current\\Bin\\amd64\\MSBuild.exe'
