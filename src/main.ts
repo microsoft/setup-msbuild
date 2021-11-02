@@ -9,7 +9,7 @@ const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
 const VSWHERE_PATH = core.getInput('vswhere-path')
 const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
-const MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86';
+const MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86'
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
