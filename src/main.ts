@@ -9,6 +9,7 @@ const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
 const VSWHERE_PATH = core.getInput('vswhere-path')
 const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
+const MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86'
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
@@ -70,25 +71,38 @@ async function run(): Promise<void> {
         const installationPath = data.toString().trim()
         core.debug(`Found installation path: ${installationPath}`)
 
-        let toolPath = path.join(
-          installationPath,
-          'MSBuild\\Current\\Bin\\MSBuild.exe'
-        )
-
-        core.debug(`Checking for path: ${toolPath}`)
-        if (!fs.existsSync(toolPath)) {
-          toolPath = path.join(
+        // x64 only exists in one possible location, so no fallback probing
+        if (MSBUILD_ARCH === "x64") {
+          let toolPath = path.join(
             installationPath,
-            'MSBuild\\15.0\\Bin\\MSBuild.exe'
-          )
-
+            'MSBuild\\Current\\Bin\\amd64\\MSBuild.exe'
+          );
           core.debug(`Checking for path: ${toolPath}`)
           if (!fs.existsSync(toolPath)) {
             return
           }
-        }
+          foundToolPath = toolPath
+        } else {
+          let toolPath = path.join(
+            installationPath,
+            'MSBuild\\Current\\Bin\\MSBuild.exe'
+          )
 
-        foundToolPath = toolPath
+          core.debug(`Checking for path: ${toolPath}`)
+          if (!fs.existsSync(toolPath)) {
+            toolPath = path.join(
+              installationPath,
+              'MSBuild\\15.0\\Bin\\MSBuild.exe'
+            )
+
+            core.debug(`Checking for path: ${toolPath}`)
+            if (!fs.existsSync(toolPath)) {
+              return
+            }
+          }
+
+          foundToolPath = toolPath
+        }
       }
     }
 
