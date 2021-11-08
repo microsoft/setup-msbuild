@@ -13,7 +13,10 @@ This action will help discover where the `MSBuild` tool is and automatically add
   run: msbuild src\YourProjectFile.csproj -t:rebuild -verbosity:diag -property:Configuration=Release
 ```
 
-## Specifying specific versions of Visual Studio (optional)
+## Optional Parameters
+There are a few additional parameters that can be set if you need them. These are optional and should only be set if you know that you need them or what you are doing.
+
+### Specifying specific versions of Visual Studio (optional)
 You may have a situation where your Actions runner has multiple versions of Visual Studio and you need to find a specific version of the tool.  Simply add the `vs-version` input to specify the range of versions to find.  If looking for a specific version, specify the minimum and maximum versions as shown in the example below, which will look for just 16.4.
 
 ```yml
@@ -25,8 +28,8 @@ You may have a situation where your Actions runner has multiple versions of Visu
 
 The syntax is the same used for Visual Studio extensions, where square brackets like "[" mean inclusive, and parenthesis like "(" mean exclusive. A comma is always required, but eliding the minimum version looks for all older versions and eliding the maximum version looks for all newer versions. See the [vswhere wiki](https://github.com/microsoft/vswhere/wiki) for more details.
 
-## Specifying prerelease versions of Visual Studio (optional)
-If you need your Actions runner to target a prerelease version of Visual Studio , simply add the `vs-prerelease` input.  This is necessary if you want to run an action on the `windows-2022` virtual environment (https://github.com/actions/virtual-environments/blob/main/images/win/Windows2022-Readme.md).
+### Use pre-release versions of Visual Studio (optional)
+If you need your Actions runner to target a pre-release version of Visual Studio, simply add the `vs-prerelease` input.  This is necessary if you want to run an action on a virtual environment that contains a pre-release version of Visual Studio or self-hosted images that you may have that also have pre-release versions of Visual Studio installed.
 
 ```yml
 - name: Add msbuild to PATH
@@ -35,9 +38,8 @@ If you need your Actions runner to target a prerelease version of Visual Studio 
     vs-prerelease: true
 ```
 
-
-## Specifying host architecture of Visual Studio (optional)
-By default the host tools will use the x86 architecture, but it is possible to target the x64 versions instead. Simply add the `msbuild-architecture` input. Valid input values are `x86` and `x64`.
+### Specifying MSBuild architecture (optional)
+By default the action will use the x86 architecture for MSBuild, but it is possible to target the x64 versions instead. Simply add the `msbuild-architecture` input. Valid input values are `x86` (default) and `x64`.
 
 ```yml
 - name: Add msbuild to PATH
