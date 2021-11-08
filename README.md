@@ -25,6 +25,27 @@ You may have a situation where your Actions runner has multiple versions of Visu
 
 The syntax is the same used for Visual Studio extensions, where square brackets like "[" mean inclusive, and parenthesis like "(" mean exclusive. A comma is always required, but eliding the minimum version looks for all older versions and eliding the maximum version looks for all newer versions. See the [vswhere wiki](https://github.com/microsoft/vswhere/wiki) for more details.
 
+## Specifying prerelease versions of Visual Studio (optional)
+If you need your Actions runner to target a prerelease version of Visual Studio , simply add the `vs-prerelease` input.  This is necessary if you want to run an action on the `windows-2022` virtual environment (https://github.com/actions/virtual-environments/blob/main/images/win/Windows2022-Readme.md).
+
+```yml
+- name: Add msbuild to PATH
+  uses: microsoft/setup-msbuild@v1.1
+  with:
+    vs-prerelease: true
+```
+
+
+## Specifying host architecture of Visual Studio (optional)
+By default the host tools will use the x86 architecture, but it is possible to target the x64 versions instead. Simply add the `msbuild-architecture` input. Valid input values are `x86` and `x64`.
+
+```yml
+- name: Add msbuild to PATH
+  uses: microsoft/setup-msbuild@v1.1
+  with:
+    msbuild-architecture: x64
+```
+
 ## How does this work?
 This makes use of the vswhere tool which is a tool delivered by Microsoft to help in identifying Visual Studio installs and various components.  This tool is installed on the hosted Windows runners for GitHub Actions.  If you are using a self-hosted runner, you either need to make sure vswhere.exe is in your agent's PATH or specify a full path to the location using:
 
