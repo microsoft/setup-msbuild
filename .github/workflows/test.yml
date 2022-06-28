@@ -24,9 +24,9 @@ jobs:
       with:
         vswhere-path: C:\ProgramData\chocolatey\bin
 
-    - name: Setup MSBuild (PATH)
-      id: setup_msbuild_path
-      uses: ./
+#     - name: Setup MSBuild (PATH)
+#       id: setup_msbuild_path
+#       uses: ./
 
     - name: Setup MSBuild (fallback)
       id: setup_msbuild_fallback
