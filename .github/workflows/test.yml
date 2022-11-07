@@ -10,6 +10,14 @@ on:
       - dev
     paths-ignore:
       - '*.md'
+  workflow_dispatch:
+    branches:
+      - dev
+      - arm64
+      - master
+    paths-ignore:
+      - '*.md'
+  
 
 jobs:
   build:
