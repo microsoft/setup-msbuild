@@ -1703,7 +1703,7 @@ function run() {
                     core.debug(`Found installation path: ${installationPath}`);
                     // x64 and arm64 only exist in one possible location, so no fallback probing
                     if (MSBUILD_ARCH === 'x64' || MSBUILD_ARCH === 'arm64') {
-                        let toolPath = path.join(installationPath, 'MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe');
+                        let toolPath = path.join(installationPath, `MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe`);
                         core.debug(`Checking for path: ${toolPath}`);
                         if (!fs.existsSync(toolPath)) {
                             return;

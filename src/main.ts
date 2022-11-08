@@ -75,7 +75,7 @@ async function run(): Promise<void> {
         if (MSBUILD_ARCH === 'x64' || MSBUILD_ARCH === 'arm64') {
           let toolPath = path.join(
             installationPath,
-            'MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe'
+            `MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe`
           )
           core.debug(`Checking for path: ${toolPath}`)
           if (!fs.existsSync(toolPath)) {
