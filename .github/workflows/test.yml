@@ -10,6 +10,14 @@ on:
       - dev
     paths-ignore:
       - '*.md'
+  workflow_dispatch:
+    branches:
+      - dev
+      - arm64
+      - master
+    paths-ignore:
+      - '*.md'
+  
 
 jobs:
   build:
@@ -40,10 +48,18 @@ jobs:
         vs-prerelease: true
         msbuild-architecture: 'x64'
 
+    - name: Setup MSBuild (arm64)
+      id: setup_msbuild_path_arm
+      uses: ./
+      with:
+        vs-prerelease: true
+        msbuild-architecture: 'arm64'
+
     - name: echo msbuild path
       run: |
         echo "vswhere-path: ${{ steps.setup_msbuild_explicit.outputs.msbuildPath }}"
         echo "PATH: ${{ steps.setup_msbuild_path.outputs.msbuildPath }}"
+        echo "ARM PATH: ${{ steps.setup_msbuild_path_arm.outputs.msbuildPath }}"
         echo "Fallback: ${{ steps.setup_msbuild_fallback.outputs.msbuildPath }}"
 
     - name: echo MSBuild
