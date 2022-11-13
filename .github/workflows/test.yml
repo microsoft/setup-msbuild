@@ -42,6 +42,7 @@ jobs:
         PATH: ''
 
     - name: Setup MSBuild (x64)
+      if: always()
       id: setup_msbuild_path_x64
       uses: ./
       with:
@@ -49,6 +50,7 @@ jobs:
         msbuild-architecture: 'x64'
 
     - name: Setup MSBuild (arm64)
+      if: always()
       id: setup_msbuild_path_arm
       uses: ./
       with:

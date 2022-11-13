@@ -39,7 +39,7 @@ If you need your Actions runner to target a pre-release version of Visual Studio
 ```
 
 ### Specifying MSBuild architecture (optional)
-By default the action will use the x86 architecture for MSBuild, but it is possible to target the x64 versions instead. Simply add the `msbuild-architecture` input. Valid input values are `x86` (default) and `x64`.
+By default the action will use the x86 architecture for MSBuild, but it is possible to target the x64 versions instead. Simply add the `msbuild-architecture` input. Valid input values are `x86` (default), `x64`, and `arm64`. Note that the success of these will rely on the runner OS.
 
 ```yml
 - name: Add msbuild to PATH
