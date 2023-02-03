@@ -1,6 +1,6 @@
 {
   "name": "setup-msbuild",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": true,
   "description": "Helps set up specific MSBuild tool into PATH for later usage.",
   "main": "lib/main.js",
