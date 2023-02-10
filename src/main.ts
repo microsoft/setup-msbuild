@@ -3,13 +3,21 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as io from '@actions/io'
+import Os from 'os'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 const IS_WINDOWS = process.platform === 'win32'
 const VS_VERSION = core.getInput('vs-version') || 'latest'
 const VSWHERE_PATH = core.getInput('vswhere-path')
 const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
-let MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86'
+
+function is64Bit() {  
+  // as of writing, these architectures returned by os.arch are 64bit
+  return ['arm64', 'ppc64', 'x64', 's390x'].includes(Os.arch())
+}
+
+let DEFAULT_ARCH = is64Bit() ? 'x64' : 'x86';
+let MSBUILD_ARCH = core.getInput('msbuild-architecture') || DEFAULT_ARCH
 
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '

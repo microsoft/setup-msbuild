@@ -1642,17 +1642,26 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const exec = __importStar(__webpack_require__(986));
 const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const io = __importStar(__webpack_require__(1));
+const os_1 = __importDefault(__webpack_require__(87));
 const IS_WINDOWS = process.platform === 'win32';
 const VS_VERSION = core.getInput('vs-version') || 'latest';
 const VSWHERE_PATH = core.getInput('vswhere-path');
 const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false';
-let MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86';
+function is64Bit() {
+    // as of writing, these architectures returned by os.arch are 64bit
+    return ['arm64', 'ppc64', 'x64', 's390x'].includes(os_1.default.arch());
+}
+let DEFAULT_ARCH = is64Bit() ? 'x64' : 'x86';
+let MSBUILD_ARCH = core.getInput('msbuild-architecture') || DEFAULT_ARCH;
 // if a specific version of VS is requested
 let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest ';
 if (ALLOW_PRERELEASE === 'true') {
