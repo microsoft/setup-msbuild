@@ -12,10 +12,11 @@ const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
 let MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86'
 
 // if a specific version of VS is requested
-let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
+let VSWHERE_EXEC =
+  '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
 if (ALLOW_PRERELEASE === 'true') {
-    VSWHERE_EXEC += ' -prerelease '
- }
+  VSWHERE_EXEC += ' -prerelease '
+}
 
 if (VS_VERSION !== 'latest') {
   VSWHERE_EXEC += `-version "${VS_VERSION}" `
@@ -77,7 +78,7 @@ async function run(): Promise<void> {
           if (MSBUILD_ARCH === 'x64') {
             MSBUILD_ARCH = 'amd64'
           }
-          let toolPath = path.join(
+          const toolPath = path.join(
             installationPath,
             `MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe`
           )
