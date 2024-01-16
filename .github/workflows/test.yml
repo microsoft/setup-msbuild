@@ -23,7 +23,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Setup MSBuild (vswhere-path)
       id: setup_msbuild_explicit
