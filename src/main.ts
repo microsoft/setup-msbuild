@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as io from '@actions/io'
+import * as vsVer from './vs-ver'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 const IS_WINDOWS = process.platform === 'win32'
@@ -12,10 +13,11 @@ const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
 let MSBUILD_ARCH = core.getInput('msbuild-architecture') || 'x86'
 
 // if a specific version of VS is requested
-let VSWHERE_EXEC = '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
+let VSWHERE_EXEC =
+  '-products * -requires Microsoft.Component.MSBuild -property installationPath -latest '
 if (ALLOW_PRERELEASE === 'true') {
-    VSWHERE_EXEC += ' -prerelease '
- }
+  VSWHERE_EXEC += ' -prerelease '
+}
 
 if (VS_VERSION !== 'latest') {
   VSWHERE_EXEC += `-version "${VS_VERSION}" `
@@ -23,11 +25,96 @@ if (VS_VERSION !== 'latest') {
 
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`)
 
+async function checkVersionInPath(): Promise<boolean> {
+  const tool = await io.which('msbuild', false)
+  const execOutput = await exec.getExecOutput(`"${tool}"`, ['--ver'], {
+    silent: true
+  })
+
+  // Exit if path is wrong or version does not match regex
+  if (execOutput.exitCode !== 0) {
+    return false
+  }
+  const versionMatch = execOutput.stdout.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)
+  const versionString = versionMatch ? versionMatch[0] : ''
+  if (!versionString) {
+    return false
+  }
+
+  // If "latest" every found version goes
+  if (VS_VERSION === 'latest') {
+    return true
+  }
+
+  // Prepare arrays for tool version and min-max versions
+  const splitVersion = versionString.split('.')
+  const version: [number, number, number, number] = [
+    parseInt(splitVersion[0]),
+    parseInt(splitVersion[1]),
+    parseInt(splitVersion[2]),
+    parseInt(splitVersion[3])
+  ]
+  const constraints = VS_VERSION.split(',')
+  const minInclusive = !constraints[0].startsWith('(')
+  const maxInclusive =
+    constraints.length === 2 ? constraints[1].endsWith(']') : false
+  const minVersionString = (
+    constraints[0].replace('[', '').replace('(', '') || '0.0'
+  ).split('.')
+  while (minVersionString.length !== 4) {
+    minVersionString.push('0')
+  }
+  const minVersion: [number, number, number, number] = [
+    parseInt(minVersionString[0]),
+    parseInt(minVersionString[1]),
+    parseInt(minVersionString[2]),
+    parseInt(minVersionString[3])
+  ]
+  const maxVersionString = (
+    (constraints[1] ? constraints[1].replace(')', '').replace(']', '') : '') ||
+    '65535.65535.65535.65535'
+  ).split('.')
+  while (maxVersionString.length !== 4) {
+    maxVersionString.push('0')
+  }
+  const maxVersion: [number, number, number, number] = [
+    parseInt(maxVersionString[0]),
+    parseInt(maxVersionString[1]),
+    parseInt(maxVersionString[2]),
+    parseInt(maxVersionString[3])
+  ]
+
+  // Check version
+  if (minInclusive) {
+    if (vsVer.lt(version, minVersion)) {
+      return false
+    }
+  } else {
+    if (vsVer.lte(version, minVersion)) {
+      return false
+    }
+  }
+  if (maxInclusive) {
+    if (vsVer.gt(version, maxVersion)) {
+      return false
+    }
+  } else {
+    if (vsVer.gte(version, maxVersion)) {
+      return false
+    }
+  }
+  return true
+}
+
 async function run(): Promise<void> {
   try {
-    // exit if non Windows runner
+    // exit if non Windows runner and msbuild not already in PATH
     if (IS_WINDOWS === false) {
-      core.setFailed('setup-msbuild can only be run on Windows runners')
+      if (await checkVersionInPath()) {
+        core.info('Correct msbuild version is already in PATH')
+        return
+      }
+      core.setFailed('setup-msbuild can only run vswhere on Windows runners')
       return
     }
 
@@ -77,7 +164,7 @@ async function run(): Promise<void> {
           if (MSBUILD_ARCH === 'x64') {
             MSBUILD_ARCH = 'amd64'
           }
-          let toolPath = path.join(
+          const toolPath = path.join(
             installationPath,
             `MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe`
           )
@@ -128,7 +215,11 @@ async function run(): Promise<void> {
     core.addPath(toolFolderPath)
     core.debug(`Tool path added to PATH: ${toolFolderPath}`)
   } catch (error) {
-    core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    } else {
+      core.setFailed('Unknown error')
+    }
   }
 }
 
