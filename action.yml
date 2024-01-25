@@ -23,5 +23,5 @@ outputs:
     description: 'The resulting location of msbuild for your inputs'
 
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
