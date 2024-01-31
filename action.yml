@@ -1,27 +1,27 @@
-name: 'setup-msbuild'
-description: 'Helps set up MSBuild into PATH for later usage.'
-author: 'Microsoft'
+name: "setup-msbuild"
+description: "Helps set up MSBuild into PATH for later usage."
+author: "Microsoft"
 branding:
   color: purple
   icon: terminal
 inputs:
   vswhere-path:
     required: false
-    description: 'Folder location of where vswhere.exe is located if a self-hosted agent'
+    description: "Folder location of where vswhere.exe is located if a self-hosted agent"
   vs-version:
-    description: 'Version of Visual Studio to search; defaults to latest if not specified'
+    description: "Version of Visual Studio to search; defaults to latest if not specified"
     required: false
   vs-prerelease:
-    description: 'Enable searching for pre-release versions of Visual Studio/MSBuild'
+    description: "Enable searching for pre-release versions of Visual Studio/MSBuild"
     required: false
   msbuild-architecture:
     description: 'The preferred processor architecture of MSBuild. Can be either "x86", "x64", or "arm64". "x64" is only available from Visual Studio version 17.0 and later.'
     required: false
-    default: 'x86'
+    default: "x86"
 outputs:
   msbuildPath:
-    description: 'The resulting location of msbuild for your inputs'
+    description: "The resulting location of msbuild for your inputs"
 
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: "node16"
+  main: "dist/index.js"
