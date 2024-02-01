@@ -8,7 +8,7 @@ This action will help discover where the `MSBuild` tool is and automatically add
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.1
+  uses: microsoft/setup-msbuild@v2
 
 - name: Build app for release
   run: msbuild src\YourProjectFile.csproj -t:rebuild -verbosity:diag -property:Configuration=Release
@@ -28,7 +28,7 @@ You may have a situation where your Actions runner has multiple versions of Visu
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.1
+  uses: microsoft/setup-msbuild@v2
   with:
     vs-version: '[16.4,16.5)'
 ```
@@ -41,7 +41,7 @@ If you need your Actions runner to target a pre-release version of Visual Studio
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.1
+  uses: microsoft/setup-msbuild@v2
   with:
     vs-prerelease: true
 ```
@@ -52,7 +52,7 @@ By default the action will use the x86 architecture for MSBuild, but it is possi
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.1
+  uses: microsoft/setup-msbuild@v2
   with:
     msbuild-architecture: x64
 ```
@@ -63,7 +63,7 @@ This makes use of the vswhere tool which is a tool delivered by Microsoft to hel
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v1.1
+  uses: microsoft/setup-msbuild@v2
   with:
     vswhere-path: 'C:\path\to\your\tools\'
 ```
