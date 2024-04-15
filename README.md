@@ -2,6 +2,7 @@
 
 This action will help discover where the `MSBuild` tool is and automatically add it to the `PATH` environment variables for you so future steps in your Actions workflow can just initiate `msbuild` commands without knowing the full path.
 
+> [!IMPORTANT]
 > Please note this tool does NOT add other Visual Studio tools (like VSTest, cl, cmake, or others) to `PATH`
 
 ## Example Usage
