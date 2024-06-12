@@ -17,7 +17,7 @@ This action will help discover where the `MSBuild` tool is and automatically add
 
 ## Runners and included software
 
-This action is intended to be used within the GitHub Actions workflows using the model of 'runners' either hosted (provided by GitHub) or self-hosted (provided by you). The version and parameters you specify below are going to be scoped to what software actually exists on the runner image being used. For example, hosted runner images from GitHub typically do NOT have pre-release versions of Visual Studio on them so using `vs-prerelease` parameter noted below may not have intended effect when using hosted runners. The software included for GitHub-hosted runner iamges can always be found here: <https://github.com/actions/runner-images> which also includes information on when/how software on hosted images gets updated.
+This action is intended to be used within the GitHub Actions workflows using the model of 'runners' either hosted (provided by GitHub) or self-hosted (provided by you). The version and parameters you specify below are going to be scoped to what software actually exists on the runner image being used. For example, hosted runner images from GitHub typically do NOT have pre-release versions of Visual Studio on them so using `vs-prerelease` parameter noted below may not have intended effect when using hosted runners. The software included for GitHub-hosted runner images can always be found here: <https://github.com/actions/runner-images> which also includes information on when/how software on hosted images gets updated.
 
 ## Optional Parameters
 
