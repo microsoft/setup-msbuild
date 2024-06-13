@@ -129,11 +129,9 @@ async function run(): Promise<void> {
     core.addPath(toolFolderPath)
     core.debug(`Tool path added to PATH: ${toolFolderPath}`)
   } catch (error) {
-    let errorMessage = 'Failed to do something exceptional'
     if (error instanceof Error) {
-      errorMessage = error.message
+      core.setFailed(error.message)
     }
-    console.log(errorMessage)
   }
 }
 
