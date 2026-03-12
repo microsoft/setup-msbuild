@@ -14,7 +14,13 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - windows-latest
+          - windows-2025-vs2026
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
 
@@ -50,18 +56,24 @@ jobs:
           vs-prerelease: true
           msbuild-architecture: "arm64"
 
-      - name: Echo architecture-specific path
+      - name: Write MSBuild summary
         if: always()
+        shell: pwsh
         run: |
-          echo "Runner architecture: ${{ runner.arch }}"
-          echo "x64 PATH: ${{ steps.setup_msbuild_path_x64.outputs.msbuildPath }}"
-          echo "arm64 PATH: ${{ steps.setup_msbuild_path_arm64.outputs.msbuildPath }}"
+          @"
+          ## MSBuild setup summary
 
-      - name: echo msbuild path
-        run: |
-          echo "vswhere-path: ${{ steps.setup_msbuild_explicit.outputs.msbuildPath }}"
-          echo "PATH: ${{ steps.setup_msbuild_path.outputs.msbuildPath }}"
-          echo "Fallback: ${{ steps.setup_msbuild_fallback.outputs.msbuildPath }}"
+          - Runner label: `${{ matrix.runner }}`
+          - Runner architecture: `${{ runner.arch }}`
+
+          | Probe | msbuildPath |
+          | --- | --- |
+          | vswhere-path | ${{ steps.setup_msbuild_explicit.outputs.msbuildPath || 'N/A' }} |
+          | PATH | ${{ steps.setup_msbuild_path.outputs.msbuildPath || 'N/A' }} |
+          | Fallback | ${{ steps.setup_msbuild_fallback.outputs.msbuildPath || 'N/A' }} |
+          | x64 | ${{ steps.setup_msbuild_path_x64.outputs.msbuildPath || 'N/A' }} |
+          | arm64 | ${{ steps.setup_msbuild_path_arm64.outputs.msbuildPath || 'N/A' }} |
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
 
       - name: echo MSBuild
         run: msbuild -version
