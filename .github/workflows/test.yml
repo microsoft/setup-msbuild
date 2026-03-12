@@ -35,7 +35,7 @@ jobs:
           PATH: ""
 
       - name: Setup MSBuild (x64)
-        if: always()
+        if: runner.arch == 'X64'
         id: setup_msbuild_path_x64
         uses: ./
         with:
@@ -43,19 +43,24 @@ jobs:
           msbuild-architecture: "x64"
 
       - name: Setup MSBuild (arm64)
-        if: always()
-        id: setup_msbuild_path_arm
+        if: runner.arch == 'ARM64'
+        id: setup_msbuild_path_arm64
         uses: ./
         with:
           vs-prerelease: true
           msbuild-architecture: "arm64"
 
+      - name: Echo architecture-specific path
+        if: always()
+        run: |
+          echo "Runner architecture: ${{ runner.arch }}"
+          echo "x64 PATH: ${{ steps.setup_msbuild_path_x64.outputs.msbuildPath }}"
+          echo "arm64 PATH: ${{ steps.setup_msbuild_path_arm64.outputs.msbuildPath }}"
+
       - name: echo msbuild path
         run: |
           echo "vswhere-path: ${{ steps.setup_msbuild_explicit.outputs.msbuildPath }}"
           echo "PATH: ${{ steps.setup_msbuild_path.outputs.msbuildPath }}"
-          echo "ARM PATH: ${{ steps.setup_msbuild_path_arm.outputs.msbuildPath }}"
-          echo "ARM PATH: ${{ steps.setup_msbuild_path_x64.outputs.msbuildPath }}"
           echo "Fallback: ${{ steps.setup_msbuild_fallback.outputs.msbuildPath }}"
 
       - name: echo MSBuild
