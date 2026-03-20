@@ -4,66 +4,76 @@ on:
     branches:
       - dev
     paths-ignore:
-      - '*.md'
+      - "*.md"
   push:
     branches:
       - dev
     paths-ignore:
-      - '*.md'
+      - "*.md"
   workflow_dispatch:
-    branches:
-      - dev
-      - arm64
-      - master
-    paths-ignore:
-      - '*.md'
-  
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - windows-latest
+          - windows-2025-vs2026
+    runs-on: ${{ matrix.runner }}
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-    - name: Setup MSBuild (vswhere-path)
-      id: setup_msbuild_explicit
-      uses: ./
-      with:
-        vswhere-path: C:\ProgramData\chocolatey\bin
+      - name: Setup MSBuild (vswhere-path)
+        id: setup_msbuild_explicit
+        uses: ./
+        with:
+          vswhere-path: C:\ProgramData\chocolatey\bin
 
-    - name: Setup MSBuild (PATH)
-      id: setup_msbuild_path
-      uses: ./
+      - name: Setup MSBuild (PATH)
+        id: setup_msbuild_path
+        uses: ./
 
-    - name: Setup MSBuild (fallback)
-      id: setup_msbuild_fallback
-      uses: ./
-      env:
-        PATH: ''
+      - name: Setup MSBuild (fallback)
+        id: setup_msbuild_fallback
+        uses: ./
+        env:
+          PATH: ""
 
-    - name: Setup MSBuild (x64)
-      if: always()
-      id: setup_msbuild_path_x64
-      uses: ./
-      with:
-        vs-prerelease: true
-        msbuild-architecture: 'x64'
+      - name: Setup MSBuild (x64)
+        if: runner.arch == 'X64'
+        id: setup_msbuild_path_x64
+        uses: ./
+        with:
+          vs-prerelease: true
+          msbuild-architecture: "x64"
 
-    - name: Setup MSBuild (arm64)
-      if: always()
-      id: setup_msbuild_path_arm
-      uses: ./
-      with:
-        vs-prerelease: true
-        msbuild-architecture: 'arm64'
+      - name: Setup MSBuild (arm64)
+        if: runner.arch == 'ARM64'
+        id: setup_msbuild_path_arm64
+        uses: ./
+        with:
+          vs-prerelease: true
+          msbuild-architecture: "arm64"
 
-    - name: echo msbuild path
-      run: |
-        echo "vswhere-path: ${{ steps.setup_msbuild_explicit.outputs.msbuildPath }}"
-        echo "PATH: ${{ steps.setup_msbuild_path.outputs.msbuildPath }}"
-        echo "ARM PATH: ${{ steps.setup_msbuild_path_arm.outputs.msbuildPath }}"
-        echo "ARM PATH: ${{ steps.setup_msbuild_path_x64.outputs.msbuildPath }}"
-        echo "Fallback: ${{ steps.setup_msbuild_fallback.outputs.msbuildPath }}"
+      - name: Write MSBuild summary
+        if: always()
+        shell: pwsh
+        run: |
+          @"
+          ## MSBuild setup summary
 
-    - name: echo MSBuild
-      run: msbuild -version
+          - Runner label: `${{ matrix.runner }}`
+          - Runner architecture: `${{ runner.arch }}`
+
+          | Probe | msbuildPath |
+          | --- | --- |
+          | vswhere-path | ${{ steps.setup_msbuild_explicit.outputs.msbuildPath || 'N/A' }} |
+          | PATH | ${{ steps.setup_msbuild_path.outputs.msbuildPath || 'N/A' }} |
+          | Fallback | ${{ steps.setup_msbuild_fallback.outputs.msbuildPath || 'N/A' }} |
+          | x64 | ${{ steps.setup_msbuild_path_x64.outputs.msbuildPath || 'N/A' }} |
+          | arm64 | ${{ steps.setup_msbuild_path_arm64.outputs.msbuildPath || 'N/A' }} |
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
+      - name: echo MSBuild
+        run: msbuild -version
