@@ -69,6 +69,10 @@ This makes use of the vswhere tool which is a tool delivered by Microsoft to hel
     vswhere-path: 'C:\path\to\your\tools\'
 ```
 
+## Problem matcher
+
+This action registers a [problem matcher](https://github.com/actions/toolkit/blob/main/docs/problem-matchers.md) for MSBuild/csc-style `error`/`warning` output (for example `error MSB1234:` or `error CS1234:`). Once registered, matching lines in the build log are automatically surfaced as annotations in the GitHub Actions UI and, when applicable, as pull request check annotations.
+
 ## Notes on arguments
 
 While the Action enables you to specify a `vswhere` path as well as a `vs-version`, these are more advanced options and when using GitHub-hosted runners you should not need these and is recommended you don't specify them as they are optional.  Using these require you to fully understand the runner environment, updates to the tools on the runner, and can cause failures if you are out of sync.  For GitHub-hosted runners, omitting these arguments is the preferred usage.

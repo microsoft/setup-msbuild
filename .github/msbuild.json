@@ -1,0 +1,30 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "msbuild",
+      "pattern": [
+        {
+          "regexp": "^\\s*(?:\\d+>\\s*)?([^\\s].*?)\\((\\d+)(?:,(\\d+))?(?:,\\d+)*\\)\\s*:\\s*(error|warning)\\s+([A-Za-z]+\\d+)\\s*:\\s*(.*?)(?:\\s+\\[(.+?)\\])?\\s*$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "code": 5,
+          "message": 6,
+          "fromPath": 7
+        }
+      ]
+    },
+    {
+      "owner": "msbuild-no-location",
+      "pattern": [
+        {
+          "regexp": "^(?!.*\\().*\\b(error|warning)\\s+([A-Za-z]+\\d+)\\s*:\\s*(.*)$",
+          "severity": 1,
+          "code": 2,
+          "message": 3
+        }
+      ]
+    }
+  ]
+}
