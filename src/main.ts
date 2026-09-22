@@ -23,8 +23,17 @@ if (VS_VERSION !== 'latest') {
 
 core.debug(`Execution arguments: ${VSWHERE_EXEC}`)
 
+function registerProblemMatcher(): void {
+  const matcherPath = path.join(__dirname, '..', '.github', 'msbuild.json')
+  core.info(`##[add-matcher]${matcherPath}`)
+}
+
 async function run(): Promise<void> {
   try {
+    // register the problem matcher so MSBuild/csc errors and warnings are
+    // annotated in the workflow log and any related pull request
+    registerProblemMatcher()
+
     // exit if non Windows runner
     if (IS_WINDOWS === false) {
       core.setFailed('setup-msbuild can only be run on Windows runners')
