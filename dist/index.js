@@ -114,13 +114,30 @@ function run() {
                 core.setFailed('Unable to find MSBuild.');
                 return;
             }
+            core.info(`Found MSBuild tool path: ${foundToolPath}`);
+            core.info(`Using MSBuild architecture: ${MSBUILD_ARCH}`);
+            // try to get the MSBuild version for diagnostic purposes; a failure here shouldn't fail the action
+            try {
+                let msbuildVersion = '';
+                const versionOptions = {};
+                versionOptions.listeners = {
+                    stdout: (data) => {
+                        msbuildVersion += data.toString();
+                    }
+                };
+                yield exec.exec(`"${foundToolPath}" -version -nologo`, [], versionOptions);
+                core.info(`Found MSBuild version: ${msbuildVersion.trim()}`);
+            }
+            catch (error) {
+                core.debug(`Unable to determine MSBuild version: ${error.message}`);
+            }
             // extract the folder location for the tool
             const toolFolderPath = path.dirname(foundToolPath);
             // set the outputs for the action to the folder path of msbuild
             core.setOutput('msbuildPath', toolFolderPath);
             // add tool path to PATH
             core.addPath(toolFolderPath);
-            core.debug(`Tool path added to PATH: ${toolFolderPath}`);
+            core.info(`Tool path added to PATH: ${toolFolderPath}`);
         }
         catch (error) {
             core.setFailed(error.message);
