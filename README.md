@@ -5,11 +5,25 @@ This action will help discover where the `MSBuild` tool is and automatically add
 > [!IMPORTANT]
 > Please note this tool does NOT add other Visual Studio tools (like VSTest, cl, cmake, or others) to `PATH`
 
+## Breaking Changes in v4
+
+Starting with `v4`, the default value of `msbuild-architecture` is no longer always `x86`. When
+`msbuild-architecture` is not explicitly specified, the action now **auto-detects** the best
+architecture:
+
+- `x64` when running on a 64-bit machine **and** the resolved Visual Studio/MSBuild install is
+  version 17.0 or later (Visual Studio 2022+, which ships a native 64-bit MSBuild).
+- `x86` otherwise (older Visual Studio versions, or 32-bit hosts), matching the previous behavior.
+
+If you explicitly set `msbuild-architecture` (e.g. `x86`, `x64`, or `arm64`), that value is always
+respected and this auto-detection does not apply. If your workflow depends on always getting the
+32-bit MSBuild by default, set `msbuild-architecture: x86` explicitly.
+
 ## Example Usage
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v3
+  uses: microsoft/setup-msbuild@v4
 
 - name: Build app for release
   run: msbuild src\YourProjectFile.csproj -t:rebuild -verbosity:diag -property:Configuration=Release
@@ -29,7 +43,7 @@ You may have a situation where your Actions runner has multiple versions of Visu
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v3
+  uses: microsoft/setup-msbuild@v4
   with:
     vs-version: '[16.4,16.5)'
 ```
@@ -42,18 +56,22 @@ If you need your Actions runner to target a pre-release version of Visual Studio
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v3
+  uses: microsoft/setup-msbuild@v4
   with:
     vs-prerelease: true
 ```
 
 ### Specifying MSBuild architecture (optional)
 
-By default the action will use the x86 architecture for MSBuild, but it is possible to target the x64 versions instead. Simply add the `msbuild-architecture` input. Valid input values are `x86` (default), `x64`, and `arm64`. Note that the success of these will rely on the runner OS.
+By default (as of `v4`), the action auto-detects the preferred MSBuild architecture: it uses `x64`
+when running on a 64-bit machine with Visual Studio/MSBuild 17.0 or later installed, and falls back
+to `x86` otherwise. You can override this by explicitly setting the `msbuild-architecture` input.
+Valid input values are `x86`, `x64`, and `arm64`. Note that the success of these will rely on the
+runner OS.
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v3
+  uses: microsoft/setup-msbuild@v4
   with:
     msbuild-architecture: x64
 ```
@@ -64,7 +82,7 @@ This makes use of the vswhere tool which is a tool delivered by Microsoft to hel
 
 ```yml
 - name: Add msbuild to PATH
-  uses: microsoft/setup-msbuild@v3
+  uses: microsoft/setup-msbuild@v4
   with:
     vswhere-path: 'C:\path\to\your\tools\'
 ```
