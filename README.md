@@ -7,17 +7,16 @@ This action will help discover where the `MSBuild` tool is and automatically add
 
 ## Breaking Changes in v4
 
-Starting with `v4`, the default value of `msbuild-architecture` is no longer always `x86`. When
-`msbuild-architecture` is not explicitly specified, the action now **auto-detects** the best
-architecture:
+Starting with `v4`, the default MSBuild architecture is no longer always `x86`.
+If `msbuild-architecture` is not set, the action selects an architecture as follows:
 
-- `x64` when running on a 64-bit machine **and** the resolved Visual Studio/MSBuild install is
-  version 17.0 or later (Visual Studio 2022+, which ships a native 64-bit MSBuild).
-- `x86` otherwise (older Visual Studio versions, or 32-bit hosts), matching the previous behavior.
+- On an ARM64 runner with Visual Studio 17.0 or later, use `arm64` if it is installed.
+  Otherwise, use `x64` if it is installed, or `x86`.
+- On an x64 runner with Visual Studio 17.0 or later, use `x64`.
+- Otherwise, use `x86`.
 
-If you explicitly set `msbuild-architecture` (e.g. `x86`, `x64`, or `arm64`), that value is always
-respected and this auto-detection does not apply. If your workflow depends on always getting the
-32-bit MSBuild by default, set `msbuild-architecture: x86` explicitly.
+The action always uses an explicit `msbuild-architecture` value.
+To keep the previous default, set `msbuild-architecture: x86`.
 
 ## Example Usage
 
@@ -63,11 +62,10 @@ If you need your Actions runner to target a pre-release version of Visual Studio
 
 ### Specifying MSBuild architecture (optional)
 
-By default (as of `v4`), the action auto-detects the preferred MSBuild architecture: it uses `x64`
-when running on a 64-bit machine with Visual Studio/MSBuild 17.0 or later installed, and falls back
-to `x86` otherwise. You can override this by explicitly setting the `msbuild-architecture` input.
-Valid input values are `x86`, `x64`, and `arm64`. Note that the success of these will rely on the
-runner OS.
+By default, the action selects the MSBuild architecture as described in
+[Breaking Changes in v4](#breaking-changes-in-v4).
+To override the default, set `msbuild-architecture` to `x86`, `x64`, or `arm64`.
+The selected architecture must be installed and supported by the runner.
 
 ```yml
 - name: Add msbuild to PATH

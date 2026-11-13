@@ -13,28 +13,32 @@ const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false'
 const MSBUILD_ARCH_INPUT = core.getInput('msbuild-architecture')
 let MSBUILD_ARCH = MSBUILD_ARCH_INPUT
 
-// The minimum Visual Studio/MSBuild major version that ships a native x64 MSBuild.exe
+// The minimum Visual Studio version for the v4 automatic 64-bit default.
 export const MIN_VS_VERSION_FOR_X64 = 17
 
-// Determines the effective MSBuild architecture to use.
-// If the user explicitly specified `msbuild-architecture`, that choice is always respected.
-// Otherwise (breaking change as of v4), the action auto-detects and prefers x64 when
-// running on a 64-bit OS and the resolved VS/MSBuild installation is version 17.0 or later.
-// If the VS version can't be determined, or the host isn't 64-bit, it falls back to x86.
 export function resolveMSBuildArchitecture(
   explicitArch: string,
-  isWindows64Bit: boolean,
-  vsMajorVersion: number | undefined
+  hostArch: string,
+  vsMajorVersion: number | undefined,
+  arm64Available: boolean,
+  x64Available: boolean
 ): string {
   if (explicitArch) {
     return explicitArch
   }
 
-  if (
-    isWindows64Bit &&
-    vsMajorVersion !== undefined &&
-    vsMajorVersion >= MIN_VS_VERSION_FOR_X64
-  ) {
+  if (vsMajorVersion === undefined || vsMajorVersion < MIN_VS_VERSION_FOR_X64) {
+    return 'x86'
+  }
+
+  if (hostArch === 'arm64') {
+    if (arm64Available) {
+      return 'arm64'
+    }
+    return x64Available ? 'x64' : 'x86'
+  }
+
+  if (hostArch === 'x64' || hostArch === 'amd64') {
     return 'x64'
   }
 
@@ -108,19 +112,13 @@ async function run(): Promise<void> {
 
     core.debug(`Full tool exe: ${vswhereToolExe}`)
 
-    // if the user did not explicitly specify an architecture, auto-detect the
-    // preferred architecture based on the host OS and the resolved VS/MSBuild version
+    let vsMajorVersion: number | undefined
     if (!MSBUILD_ARCH_INPUT) {
-      let vsMajorVersion: number | undefined
+      let installationVersion = ''
       const versionOptions: ExecOptions = {}
       versionOptions.listeners = {
         stdout: (data: Buffer) => {
-          const installationVersion = data.toString().trim()
-          core.debug(`Found installation version: ${installationVersion}`)
-          const parsed = parseMajorVersion(installationVersion)
-          if (parsed !== undefined) {
-            vsMajorVersion = parsed
-          }
+          installationVersion += data.toString()
         }
       }
 
@@ -129,66 +127,98 @@ async function run(): Promise<void> {
         '-property installationVersion'
       )
       await exec.exec(`"${vswhereToolExe}" ${versionExec}`, [], versionOptions)
+      core.debug(`Found installation version: ${installationVersion.trim()}`)
+      vsMajorVersion = parseMajorVersion(installationVersion)
+    }
 
-      const isWindows64Bit = os.arch() === 'x64' || os.arch() === 'arm64'
+    let installationPath = ''
+    const options: ExecOptions = {}
+    options.listeners = {
+      stdout: (data: Buffer) => {
+        installationPath += data.toString()
+      }
+    }
+
+    await exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options)
+    installationPath = installationPath.trim()
+    core.debug(`Found installation path: ${installationPath}`)
+    if (!installationPath) {
+      core.setFailed('Unable to find MSBuild.')
+      return
+    }
+
+    if (!MSBUILD_ARCH_INPUT) {
+      // os.arch() describes Node, which can run under emulation on Windows.
+      const hostArch = (
+        process.env['PROCESSOR_ARCHITEW6432'] ||
+        process.env['RUNNER_ARCH'] ||
+        os.arch()
+      ).toLowerCase()
+      const arm64Available =
+        hostArch === 'arm64' &&
+        fs.existsSync(
+          path.join(
+            installationPath,
+            'MSBuild\\Current\\Bin\\arm64\\MSBuild.exe'
+          )
+        )
+      const x64Available =
+        hostArch === 'arm64' &&
+        !arm64Available &&
+        fs.existsSync(
+          path.join(
+            installationPath,
+            'MSBuild\\Current\\Bin\\amd64\\MSBuild.exe'
+          )
+        )
       MSBUILD_ARCH = resolveMSBuildArchitecture(
         MSBUILD_ARCH_INPUT,
-        isWindows64Bit,
-        vsMajorVersion
+        hostArch,
+        vsMajorVersion,
+        arm64Available,
+        x64Available
       )
+      if (
+        hostArch === 'arm64' &&
+        vsMajorVersion !== undefined &&
+        vsMajorVersion >= MIN_VS_VERSION_FOR_X64 &&
+        !arm64Available
+      ) {
+        core.info(`ARM64 MSBuild not found; using ${MSBUILD_ARCH} instead`)
+      }
       core.info(
-        `Auto-detected msbuild-architecture: ${MSBUILD_ARCH} (os.arch=${os.arch()}, vsMajorVersion=${vsMajorVersion})`
+        `Auto-detected msbuild-architecture: ${MSBUILD_ARCH} (host architecture=${hostArch}, vsMajorVersion=${vsMajorVersion})`
       )
     }
 
     let foundToolPath = ''
-    const options: ExecOptions = {}
-    options.listeners = {
-      stdout: (data: Buffer) => {
-        const installationPath = data.toString().trim()
-        core.debug(`Found installation path: ${installationPath}`)
-
-        // x64 and arm64 only exist in one possible location, so no fallback probing
-        if (MSBUILD_ARCH === 'x64' || MSBUILD_ARCH === 'arm64') {
-          // x64 is actually amd64 so change to that
-          if (MSBUILD_ARCH === 'x64') {
-            MSBUILD_ARCH = 'amd64'
-          }
-          let toolPath = path.join(
-            installationPath,
-            `MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe`
-          )
-          core.debug(`Checking for path: ${toolPath}`)
-          if (!fs.existsSync(toolPath)) {
-            return
-          }
-          foundToolPath = toolPath
-        } else {
-          let toolPath = path.join(
-            installationPath,
-            'MSBuild\\Current\\Bin\\MSBuild.exe'
-          )
-
-          core.debug(`Checking for path: ${toolPath}`)
-          if (!fs.existsSync(toolPath)) {
-            toolPath = path.join(
-              installationPath,
-              'MSBuild\\15.0\\Bin\\MSBuild.exe'
-            )
-
-            core.debug(`Checking for path: ${toolPath}`)
-            if (!fs.existsSync(toolPath)) {
-              return
-            }
-          }
-
-          foundToolPath = toolPath
-        }
+    if (MSBUILD_ARCH === 'x64' || MSBUILD_ARCH === 'arm64') {
+      const directory = MSBUILD_ARCH === 'x64' ? 'amd64' : 'arm64'
+      const toolPath = path.join(
+        installationPath,
+        `MSBuild\\Current\\Bin\\${directory}\\MSBuild.exe`
+      )
+      core.debug(`Checking for path: ${toolPath}`)
+      if (fs.existsSync(toolPath)) {
+        foundToolPath = toolPath
+      }
+    } else {
+      let toolPath = path.join(
+        installationPath,
+        'MSBuild\\Current\\Bin\\MSBuild.exe'
+      )
+      core.debug(`Checking for path: ${toolPath}`)
+      if (!fs.existsSync(toolPath)) {
+        toolPath = path.join(
+          installationPath,
+          'MSBuild\\15.0\\Bin\\MSBuild.exe'
+        )
+        core.debug(`Checking for path: ${toolPath}`)
+      }
+      if (fs.existsSync(toolPath)) {
+        foundToolPath = toolPath
       }
     }
-
-    // execute the find putting the result of the command in the options foundToolPath
-    await exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options)
 
     if (!foundToolPath) {
       core.setFailed('Unable to find MSBuild.')

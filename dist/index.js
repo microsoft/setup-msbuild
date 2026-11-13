@@ -35,20 +35,22 @@ const VSWHERE_PATH = core.getInput('vswhere-path');
 const ALLOW_PRERELEASE = core.getInput('vs-prerelease') || 'false';
 const MSBUILD_ARCH_INPUT = core.getInput('msbuild-architecture');
 let MSBUILD_ARCH = MSBUILD_ARCH_INPUT;
-// The minimum Visual Studio/MSBuild major version that ships a native x64 MSBuild.exe
+// The minimum Visual Studio version for the v4 automatic 64-bit default.
 exports.MIN_VS_VERSION_FOR_X64 = 17;
-// Determines the effective MSBuild architecture to use.
-// If the user explicitly specified `msbuild-architecture`, that choice is always respected.
-// Otherwise (breaking change as of v4), the action auto-detects and prefers x64 when
-// running on a 64-bit OS and the resolved VS/MSBuild installation is version 17.0 or later.
-// If the VS version can't be determined, or the host isn't 64-bit, it falls back to x86.
-function resolveMSBuildArchitecture(explicitArch, isWindows64Bit, vsMajorVersion) {
+function resolveMSBuildArchitecture(explicitArch, hostArch, vsMajorVersion, arm64Available, x64Available) {
     if (explicitArch) {
         return explicitArch;
     }
-    if (isWindows64Bit &&
-        vsMajorVersion !== undefined &&
-        vsMajorVersion >= exports.MIN_VS_VERSION_FOR_X64) {
+    if (vsMajorVersion === undefined || vsMajorVersion < exports.MIN_VS_VERSION_FOR_X64) {
+        return 'x86';
+    }
+    if (hostArch === 'arm64') {
+        if (arm64Available) {
+            return 'arm64';
+        }
+        return x64Available ? 'x64' : 'x86';
+    }
+    if (hostArch === 'x64' || hostArch === 'amd64') {
         return 'x64';
     }
     return 'x86';
@@ -107,62 +109,73 @@ function run() {
                 return;
             }
             core.debug(`Full tool exe: ${vswhereToolExe}`);
-            // if the user did not explicitly specify an architecture, auto-detect the
-            // preferred architecture based on the host OS and the resolved VS/MSBuild version
+            let vsMajorVersion;
             if (!MSBUILD_ARCH_INPUT) {
-                let vsMajorVersion;
+                let installationVersion = '';
                 const versionOptions = {};
                 versionOptions.listeners = {
                     stdout: (data) => {
-                        const installationVersion = data.toString().trim();
-                        core.debug(`Found installation version: ${installationVersion}`);
-                        const parsed = parseMajorVersion(installationVersion);
-                        if (parsed !== undefined) {
-                            vsMajorVersion = parsed;
-                        }
+                        installationVersion += data.toString();
                     }
                 };
                 const versionExec = VSWHERE_EXEC.replace('-property installationPath', '-property installationVersion');
                 yield exec.exec(`"${vswhereToolExe}" ${versionExec}`, [], versionOptions);
-                const isWindows64Bit = os.arch() === 'x64' || os.arch() === 'arm64';
-                MSBUILD_ARCH = resolveMSBuildArchitecture(MSBUILD_ARCH_INPUT, isWindows64Bit, vsMajorVersion);
-                core.info(`Auto-detected msbuild-architecture: ${MSBUILD_ARCH} (os.arch=${os.arch()}, vsMajorVersion=${vsMajorVersion})`);
+                core.debug(`Found installation version: ${installationVersion.trim()}`);
+                vsMajorVersion = parseMajorVersion(installationVersion);
             }
-            let foundToolPath = '';
+            let installationPath = '';
             const options = {};
             options.listeners = {
                 stdout: (data) => {
-                    const installationPath = data.toString().trim();
-                    core.debug(`Found installation path: ${installationPath}`);
-                    // x64 and arm64 only exist in one possible location, so no fallback probing
-                    if (MSBUILD_ARCH === 'x64' || MSBUILD_ARCH === 'arm64') {
-                        // x64 is actually amd64 so change to that
-                        if (MSBUILD_ARCH === 'x64') {
-                            MSBUILD_ARCH = 'amd64';
-                        }
-                        let toolPath = path.join(installationPath, `MSBuild\\Current\\Bin\\${MSBUILD_ARCH}\\MSBuild.exe`);
-                        core.debug(`Checking for path: ${toolPath}`);
-                        if (!fs.existsSync(toolPath)) {
-                            return;
-                        }
-                        foundToolPath = toolPath;
-                    }
-                    else {
-                        let toolPath = path.join(installationPath, 'MSBuild\\Current\\Bin\\MSBuild.exe');
-                        core.debug(`Checking for path: ${toolPath}`);
-                        if (!fs.existsSync(toolPath)) {
-                            toolPath = path.join(installationPath, 'MSBuild\\15.0\\Bin\\MSBuild.exe');
-                            core.debug(`Checking for path: ${toolPath}`);
-                            if (!fs.existsSync(toolPath)) {
-                                return;
-                            }
-                        }
-                        foundToolPath = toolPath;
-                    }
+                    installationPath += data.toString();
                 }
             };
-            // execute the find putting the result of the command in the options foundToolPath
             yield exec.exec(`"${vswhereToolExe}" ${VSWHERE_EXEC}`, [], options);
+            installationPath = installationPath.trim();
+            core.debug(`Found installation path: ${installationPath}`);
+            if (!installationPath) {
+                core.setFailed('Unable to find MSBuild.');
+                return;
+            }
+            if (!MSBUILD_ARCH_INPUT) {
+                // os.arch() describes Node, which can run under emulation on Windows.
+                const hostArch = (process.env['PROCESSOR_ARCHITEW6432'] ||
+                    process.env['RUNNER_ARCH'] ||
+                    os.arch()).toLowerCase();
+                const arm64Available = hostArch === 'arm64' &&
+                    fs.existsSync(path.join(installationPath, 'MSBuild\\Current\\Bin\\arm64\\MSBuild.exe'));
+                const x64Available = hostArch === 'arm64' &&
+                    !arm64Available &&
+                    fs.existsSync(path.join(installationPath, 'MSBuild\\Current\\Bin\\amd64\\MSBuild.exe'));
+                MSBUILD_ARCH = resolveMSBuildArchitecture(MSBUILD_ARCH_INPUT, hostArch, vsMajorVersion, arm64Available, x64Available);
+                if (hostArch === 'arm64' &&
+                    vsMajorVersion !== undefined &&
+                    vsMajorVersion >= exports.MIN_VS_VERSION_FOR_X64 &&
+                    !arm64Available) {
+                    core.info(`ARM64 MSBuild not found; using ${MSBUILD_ARCH} instead`);
+                }
+                core.info(`Auto-detected msbuild-architecture: ${MSBUILD_ARCH} (host architecture=${hostArch}, vsMajorVersion=${vsMajorVersion})`);
+            }
+            let foundToolPath = '';
+            if (MSBUILD_ARCH === 'x64' || MSBUILD_ARCH === 'arm64') {
+                const directory = MSBUILD_ARCH === 'x64' ? 'amd64' : 'arm64';
+                const toolPath = path.join(installationPath, `MSBuild\\Current\\Bin\\${directory}\\MSBuild.exe`);
+                core.debug(`Checking for path: ${toolPath}`);
+                if (fs.existsSync(toolPath)) {
+                    foundToolPath = toolPath;
+                }
+            }
+            else {
+                let toolPath = path.join(installationPath, 'MSBuild\\Current\\Bin\\MSBuild.exe');
+                core.debug(`Checking for path: ${toolPath}`);
+                if (!fs.existsSync(toolPath)) {
+                    toolPath = path.join(installationPath, 'MSBuild\\15.0\\Bin\\MSBuild.exe');
+                    core.debug(`Checking for path: ${toolPath}`);
+                }
+                if (fs.existsSync(toolPath)) {
+                    foundToolPath = toolPath;
+                }
+            }
             if (!foundToolPath) {
                 core.setFailed('Unable to find MSBuild.');
                 return;

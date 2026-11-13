@@ -15,7 +15,7 @@ inputs:
     description: "Enable searching for pre-release versions of Visual Studio/MSBuild"
     required: false
   msbuild-architecture:
-    description: 'The preferred processor architecture of MSBuild. Can be either "x86", "x64", or "arm64". If left unspecified, the action auto-detects the best option: "x64" on 64-bit machines, otherwise "x86".'
+    description: 'The MSBuild architecture: "x86", "x64", or "arm64". If unspecified with Visual Studio 17 or later, ARM64 runners use arm64 if installed, then x64 if installed, otherwise x86; x64 runners use x64. All other cases use x86.'
     required: false
 outputs:
   msbuildPath:
