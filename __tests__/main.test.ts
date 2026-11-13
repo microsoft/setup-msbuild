@@ -1,4 +1,4 @@
-import {parseMajorVersion, resolveMSBuildArchitecture} from '../src/main'
+import {parseMajorVersion, getMSBuildArchitectures} from '../src/main'
 
 jest.mock('@actions/core', () => ({
   getInput: jest.fn().mockReturnValue(''),
@@ -28,48 +28,33 @@ describe('parseMajorVersion', () => {
   })
 })
 
-describe('resolveMSBuildArchitecture', () => {
+describe('getMSBuildArchitectures', () => {
   it('always respects an explicit architecture, regardless of OS/version', () => {
-    expect(resolveMSBuildArchitecture('x86', 'arm64', 17, true, true)).toBe(
-      'x86'
-    )
-    expect(resolveMSBuildArchitecture('x64', 'ia32', 15, false, false)).toBe(
-      'x64'
-    )
-    expect(resolveMSBuildArchitecture('arm64', 'x64', 16, false, false)).toBe(
-      'arm64'
-    )
+    expect(getMSBuildArchitectures('x86', 'arm64', 17)).toEqual(['x86'])
+    expect(getMSBuildArchitectures('x64', 'ia32', 15)).toEqual(['x64'])
+    expect(getMSBuildArchitectures('arm64', 'x64', 16)).toEqual(['arm64'])
   })
 
   it('defaults to x64 on an x64 host with VS 17 or later', () => {
-    expect(resolveMSBuildArchitecture('', 'x64', 17, false, false)).toBe('x64')
-    expect(resolveMSBuildArchitecture('', 'amd64', 18, false, false)).toBe(
-      'x64'
-    )
+    expect(getMSBuildArchitectures('', 'x64', 17)).toEqual(['x64'])
+    expect(getMSBuildArchitectures('', 'amd64', 18)).toEqual(['x64'])
   })
 
-  it('prefers native ARM64 when it is available', () => {
-    expect(resolveMSBuildArchitecture('', 'arm64', 17, true, true)).toBe(
-      'arm64'
-    )
-  })
-
-  it('falls back to x64 and then x86 when ARM64 MSBuild is unavailable', () => {
-    expect(resolveMSBuildArchitecture('', 'arm64', 17, false, true)).toBe('x64')
-    expect(resolveMSBuildArchitecture('', 'arm64', 17, false, false)).toBe(
+  it('orders ARM64 candidates from native to emulated architectures', () => {
+    expect(getMSBuildArchitectures('', 'arm64', 17)).toEqual([
+      'arm64',
+      'x64',
       'x86'
-    )
+    ])
   })
 
   it('defaults to x86 for older versions and 32-bit hosts', () => {
-    expect(resolveMSBuildArchitecture('', 'arm64', 16, true, true)).toBe('x86')
-    expect(resolveMSBuildArchitecture('', 'x64', 16, false, false)).toBe('x86')
-    expect(resolveMSBuildArchitecture('', 'ia32', 17, false, false)).toBe('x86')
+    expect(getMSBuildArchitectures('', 'arm64', 16)).toEqual(['x86'])
+    expect(getMSBuildArchitectures('', 'x64', 16)).toEqual(['x86'])
+    expect(getMSBuildArchitectures('', 'ia32', 17)).toEqual(['x86'])
   })
 
   it('defaults to x86 when the VS/MSBuild version could not be determined', () => {
-    expect(resolveMSBuildArchitecture('', 'arm64', undefined, true, true)).toBe(
-      'x86'
-    )
+    expect(getMSBuildArchitectures('', 'arm64', undefined)).toEqual(['x86'])
   })
 })

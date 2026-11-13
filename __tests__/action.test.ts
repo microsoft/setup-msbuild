@@ -14,16 +14,24 @@ const x86Path = path.join(
   installationPath,
   'MSBuild\\Current\\Bin\\MSBuild.exe'
 )
+const legacyPath = path.join(
+  installationPath,
+  'MSBuild\\15.0\\Bin\\MSBuild.exe'
+)
 
 async function runAction(
   files: string[],
   explicitArch = '',
   version = '17.4.0.0',
-  nativeArchOverride = ''
+  nativeArchOverride = '',
+  installations = JSON.stringify([
+    {installationPath, installationVersion: version}
+  ])
 ): Promise<{
   addedPath: jest.Mock
   failed: jest.Mock
   exec: jest.Mock
+  existsSync: jest.Mock
 }> {
   const platform = Object.getOwnPropertyDescriptor(process, 'platform')
   const runnerArch = process.env['RUNNER_ARCH']
@@ -34,18 +42,18 @@ async function runAction(
   })
   const addedPath = jest.fn(() => finish())
   const failed = jest.fn(() => finish())
+  const existsSync = jest.fn(
+    (file: string) => file === 'vswhere.exe' || files.includes(file)
+  )
   const exec = jest.fn(
     async (command: string, _args: string[], options: ExecOptions) => {
       const stdout = options.listeners && options.listeners.stdout
       if (!stdout) {
         throw new Error('Missing stdout listener')
       }
-      if (command.includes('installationVersion')) {
-        stdout(Buffer.from(version.slice(0, 3)))
-        stdout(Buffer.from(`${version.slice(3)}\n`))
-      } else if (command.includes('installationPath')) {
-        stdout(Buffer.from('visual-'))
-        stdout(Buffer.from('studio\n'))
+      if (command.includes('vswhere.exe')) {
+        stdout(Buffer.from(installations.slice(0, 12)))
+        stdout(Buffer.from(installations.slice(12)))
       } else {
         stdout(Buffer.from('17.4.0\n'))
       }
@@ -76,14 +84,19 @@ async function runAction(
       which: jest.fn().mockResolvedValue('vswhere.exe')
     }))
     jest.doMock('os', () => ({arch: () => 'x64'}))
-    jest.doMock('fs', () => ({
-      existsSync: (file: string) =>
-        file === 'vswhere.exe' || files.includes(file)
-    }))
+    jest.doMock('fs', () => ({existsSync}))
 
     require('../src/main')
     await finished
-    return {addedPath, failed, exec}
+    expect(existsSync.mock.calls).toEqual(
+      Array.from(
+        new Set(existsSync.mock.calls.map(call => call[0]))
+      ).map(file => [file])
+    )
+    expect(
+      exec.mock.calls.filter(call => call[0].includes('vswhere.exe'))
+    ).toHaveLength(1)
+    return {addedPath, failed, exec, existsSync}
   } finally {
     if (platform) {
       Object.defineProperty(process, 'platform', platform)
@@ -113,6 +126,7 @@ describe('ARM64 action selection', () => {
       [],
       expect.anything()
     )
+    expect(result.existsSync.mock.calls).toEqual([['vswhere.exe'], [arm64Path]])
   })
 
   it('uses the native Windows architecture when a 32-bit runner is emulated', async () => {
@@ -142,6 +156,11 @@ describe('ARM64 action selection', () => {
       [],
       expect.anything()
     )
+    expect(result.existsSync.mock.calls).toEqual([
+      ['vswhere.exe'],
+      [arm64Path],
+      [x64Path]
+    ])
   })
 
   it('falls back to x86 when neither 64-bit executable is installed', async () => {
@@ -154,6 +173,12 @@ describe('ARM64 action selection', () => {
       [],
       expect.anything()
     )
+    expect(result.existsSync.mock.calls).toEqual([
+      ['vswhere.exe'],
+      [arm64Path],
+      [x64Path],
+      [x86Path]
+    ])
   })
 
   it('uses x86 for Visual Studio versions older than 17', async () => {
@@ -168,7 +193,7 @@ describe('ARM64 action selection', () => {
     )
   })
 
-  it('respects explicit x86 without querying the version', async () => {
+  it('respects explicit x86 without probing other architectures', async () => {
     const result = await runAction([arm64Path, x86Path], 'x86')
 
     expect(result.failed).not.toHaveBeenCalled()
@@ -178,11 +203,7 @@ describe('ARM64 action selection', () => {
       [],
       expect.anything()
     )
-    expect(
-      result.exec.mock.calls.some(call =>
-        call[0].includes('installationVersion')
-      )
-    ).toBe(false)
+    expect(result.existsSync.mock.calls).toEqual([['vswhere.exe'], [x86Path]])
   })
 
   it('does not fall back when an explicit ARM64 executable is missing', async () => {
@@ -190,5 +211,44 @@ describe('ARM64 action selection', () => {
 
     expect(result.addedPath).not.toHaveBeenCalled()
     expect(result.failed).toHaveBeenCalledWith('Unable to find MSBuild.')
+    expect(result.existsSync.mock.calls).toEqual([['vswhere.exe'], [arm64Path]])
+  })
+
+  it('probes each legacy x86 path once', async () => {
+    const result = await runAction([legacyPath], 'x86')
+
+    expect(result.failed).not.toHaveBeenCalled()
+    expect(result.exec).toHaveBeenCalledWith(
+      `"${legacyPath}" -version -nologo`,
+      [],
+      expect.anything()
+    )
+    expect(result.existsSync.mock.calls).toEqual([
+      ['vswhere.exe'],
+      [x86Path],
+      [legacyPath]
+    ])
+  })
+
+  it('does not probe executables when no installation matches', async () => {
+    const result = await runAction([], '', '', '', '[]')
+
+    expect(result.failed).toHaveBeenCalledWith('Unable to find MSBuild.')
+    expect(result.existsSync.mock.calls).toEqual([['vswhere.exe']])
+  })
+
+  it('reports invalid installation output without probing executables', async () => {
+    const result = await runAction(
+      [],
+      '',
+      '',
+      '',
+      '{"installationPath":"wrong"}'
+    )
+
+    expect(result.failed).toHaveBeenCalledWith(
+      'Invalid Visual Studio installation data from vswhere.'
+    )
+    expect(result.existsSync.mock.calls).toEqual([['vswhere.exe']])
   })
 })
